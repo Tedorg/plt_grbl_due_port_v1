@@ -46,7 +46,7 @@ void mc_arc(float *target, plan_line_data_t *pl_data, float *position, float *of
   uint8_t axis_0, uint8_t axis_1, uint8_t axis_linear, uint8_t is_clockwise_arc);
 
 
-void mc_bezier(float *target, plan_line_data_t *pl_data, float *position, float *offset, float offset_p,float offset_q,
+void mc_bezier(float *target, plan_line_data_t *pl_data, float *position, float *offset_a, float *offset_b,
            uint8_t axis_0, uint8_t axis_1, uint8_t axis_linear);
 
 // Dwell for a specific number of seconds

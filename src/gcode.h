@@ -212,6 +212,9 @@ typedef struct {
   float s;         // Spindle speed
   uint8_t t;       // Tool selection
   float xyz[3];    // X,Y,Z Translational axes
+  float offset_a[3];    // X,Y,Z Translational axes
+  float offset_b[3];    // X,Y,Z Translational axes
+  
 } gc_values_t;
 
 

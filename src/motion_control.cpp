@@ -22,7 +22,14 @@
 */
 
 #include "grbl.h"
-
+#define NOMORE(v, n) \
+    do{ \
+      __typeof__(n) _n = (n); \
+      if (_n < v) v = _n; \
+    }while(0)
+#define MIN_STEP 0.002f
+#define MAX_STEP 0.1f
+#define SIGMA 0.1f
 #ifdef MASLOWCNC
 void triangularInverse(float xTarget,float yTarget, float* aChainLength, float* bChainLength);
 #endif
@@ -70,77 +77,6 @@ void mc_line(float *target, plan_line_data_t *pl_data)
     else { break; }
   } while (1);
 
-  #ifdef MASLOWCNC
-//  MASLOW is circular in motion, so long lines must be divided up 
-    float cpos[N_AXIS]; 
-
-    cpos[X_AXIS] = (gc_state.position[X_AXIS]); // / settings.steps_per_mm[X_AXIS]);
-    cpos[Y_AXIS] = (gc_state.position[Y_AXIS]); // / settings.steps_per_mm[Y_AXIS]);
-    cpos[Z_AXIS] = (gc_state.position[Z_AXIS]); // / settings.steps_per_mm[Z_AXIS]);
-
-    float deltax = target[X_AXIS] - cpos[X_AXIS]; // working in mm position
-    float deltay = target[Y_AXIS] - cpos[Y_AXIS]; 
-    float deltaz = target[Z_AXIS] - cpos[Z_AXIS]; 
-
-    printf("x: %f  y: %f   z: %f  \n", deltax,deltay,deltaz);
-
-    if((abs(deltax) > (float)(0.0)) || (abs(deltay) > (float)0.0))  // don't segment z-only moves
-    {
-      float deltaLong = max( abs(deltax) , (max( abs(deltay), abs(deltaz))));
-
-      int32_t segs = (int32_t) lround(deltaLong / MAX_SEG_LENGTH_MM);
-      if(segs < 1) segs = 1;
-
-      float dx = deltax / (float)segs;
-      float dy = deltay / (float)segs;
-      float dz = deltaz / (float)segs;
-
-      // if (invert_feed_rate) 
-      // { 
-      //     feed_rate *= segs; 
-      // } // compensate feedrate for multiple segments
-      
-      while(segs-- > 0)  // break up line into short pieces
-      {  
-        cpos[X_AXIS] += dx;
-        cpos[Y_AXIS] += dy;
-        cpos[Z_AXIS] += dz;
-
-        // If the buffer is full remain in this loop until there is room in the buffer.
-        do {
-          protocol_execute_realtime(); // Check for any run-time commands
-          if (sys.abort) { return; } // Bail, if system abort.
-          if ( plan_check_full_buffer() ) { protocol_auto_cycle_start(); } // Auto-cycle start when buffer is full.
-          else { break; }
-        } while (1);
-
-        // Plan and queue motion into planner buffer MAX_SEG_LENGTH_MM segments to plan buffer..
-        if (plan_buffer_line(cpos, pl_data) == PLAN_EMPTY_BLOCK) {
-          if (bit_istrue(settings.flags,BITFLAG_LASER_MODE)) {
-            // Correctly set spindle state, if there is a coincident position passed. Forces a buffer
-            // sync while in M3 laser mode only.
-            if (pl_data->condition & PL_COND_FLAG_SPINDLE_CW) {
-              spindle_sync(PL_COND_FLAG_SPINDLE_CW, pl_data->spindle_speed);
-            }
-          }
-      }
-      }
-    } 
-    else
-    {
-      // Plan and queue motion into planner buffer
-      if (plan_buffer_line(target, pl_data) == PLAN_EMPTY_BLOCK) {
-        if (bit_istrue(settings.flags,BITFLAG_LASER_MODE)) {
-          // Correctly set spindle state, if there is a coincident position passed. Forces a buffer
-          // sync while in M3 laser mode only.
-          if (pl_data->condition & PL_COND_FLAG_SPINDLE_CW) {
-            spindle_sync(PL_COND_FLAG_SPINDLE_CW, pl_data->spindle_speed);
-          }
-        }
-      }
-    }
-     
-  #else
 
     // Plan and queue motion into planner buffer
     if (plan_buffer_line(target, pl_data) == PLAN_EMPTY_BLOCK) {
@@ -152,7 +88,7 @@ void mc_line(float *target, plan_line_data_t *pl_data)
         }
       }
     }
-  #endif
+ 
 }
 
 
@@ -279,12 +215,126 @@ void mc_dwell(float seconds)
 }
 
 
-//Bezier Spline for PlotterV2 
-void mc_bezier(float *target, plan_line_data_t *pl_data, float *position, float *offset, float offset_p,float offset_q,
-           uint8_t axis_0, uint8_t axis_1, uint8_t axis_linear)
-{
-  printf("target: %f %f Position:  %f %f %f  Offset I  %f  J  %f   P %f  Q  %f  \n", target[0], target[1], position[0], position[1], offset[0], offset[1], offset_p, offset_q);
+// Compute the linear interpolation between two real numbers.
+static inline float interp(const float &a, const float &b, const float &t) { return (1 - t) * a + t * b; }
 
+/**
+ * Compute a Bézier curve using the De Casteljau's algorithm (see
+ * https://en.wikipedia.org/wiki/De_Casteljau%27s_algorithm), which is
+ * easy to code and has good numerical stability (very important,
+ * since Arudino works with limited precision real numbers).
+ */
+static inline float eval_bezier(const float &a, const float &b, const float &c, const float &d, const float &t) {
+  const float iab = interp(a, b, t),
+              ibc = interp(b, c, t),
+              icd = interp(c, d, t),
+              iabc = interp(iab, ibc, t),
+              ibcd = interp(ibc, icd, t);
+  return interp(iabc, ibcd, t);
+}
+
+/**
+ * We approximate Euclidean distance with the sum of the coordinates
+ * offset (so-called "norm 1"), which is quicker to compute.
+ */
+static inline float dist1(const float &x1, const float &y1, const float &x2, const float &y2) { return abs(x1 - x2) + abs(y1 - y2); }
+//Bezier Spline for PlotterV2 
+void mc_bezier(
+  float *target, 
+  plan_line_data_t *pl_data, 
+  float *position, 
+  float *offset_a, 
+  float *offset_b,
+  uint8_t axis_0,
+  uint8_t axis_1, 
+  uint8_t axis_linear
+  )
+{
+  printf("target: %f %f Position:  %f %f   Offset I  %f  J  %f   P %f  Q  %f  \n", target[0], target[1], position[0], position[1], offset_a[0], offset_a[1],  offset_b[0], offset_b[1]);
+
+float first[2] = {
+    position[0] + offset_a[0],
+    position[1] + offset_a[1]
+  }, 
+  second[2] = {
+    position[0] + offset_b[0],
+    position[1] + offset_b[1]
+  },
+  bez_target[2]={
+    position[0],
+    position[1]
+  };
+
+  
+  float step = MAX_STEP;
+
+  
+
+  for (float t = 0; t < 1;) {
+
+    
+
+    // First try to reduce the step in order to make it sufficiently
+    // close to a linear interpolation.
+    bool did_reduce = false;
+    float new_t = t + step;
+    NOMORE(new_t, 1);
+    float new_pos0 = eval_bezier(position[0], first[0], second[0], target[0], new_t),
+          new_pos1 = eval_bezier(position[1], first[1], second[1], target[1], new_t);
+    for (;;) {
+      if (new_t - t < (MIN_STEP)) break;
+      const float candidate_t = 0.5f * (t + new_t),
+                  candidate_pos0 = eval_bezier(position[0], first[0], second[0], target[0], candidate_t),
+                  candidate_pos1 = eval_bezier(position[1], first[1], second[1], target[1], candidate_t),
+                  interp_pos0 = 0.5f * (bez_target[0] + new_pos0),
+                  interp_pos1 = 0.5f * (bez_target[1] + new_pos1);
+      if (dist1(candidate_pos0, candidate_pos1, interp_pos0, interp_pos1) <= (SIGMA)) break;
+      new_t = candidate_t;
+      new_pos0 = candidate_pos0;
+      new_pos1 = candidate_pos1;
+      did_reduce = true;
+    }
+
+    // If we did not reduce the step, maybe we should enlarge it.
+    if (!did_reduce) for (;;) {
+      if (new_t - t > MAX_STEP) break;
+      const float candidate_t = t + 2 * (new_t - t);
+      if (candidate_t >= 1) break;
+      const float candidate_pos0 = eval_bezier(position[0], first[0], second[0], target[0], candidate_t),
+                  candidate_pos1 = eval_bezier(position[1], first[1], second[1], target[1], candidate_t),
+                  interp_pos0 = 0.5f * (bez_target[0] + candidate_pos0),
+                  interp_pos1 = 0.5f * (bez_target[1] + candidate_pos1);
+      if (dist1(new_pos0, new_pos1, interp_pos0, interp_pos1) > (SIGMA)) break;
+      new_t = candidate_t;
+      new_pos0 = candidate_pos0;
+      new_pos1 = candidate_pos1;
+    }
+
+    // Check some postcondition; they are disabled in the actual
+    // Marlin build, but if you test the same code on a computer you
+    // may want to check they are respect.
+    /*
+      assert(new_t <= 1.0);
+      if (new_t < 1.0) {
+        assert(new_t - t >= (MIN_STEP) / 2.0);
+        assert(new_t - t <= (MAX_STEP) * 2.0);
+      }
+    */
+
+    step = new_t - t;
+    t = new_t;
+
+    // Compute and send new position
+     position[axis_0] = new_pos0;
+      position[axis_1] = new_pos1;
+      
+  //printf("Position:  %f %f    \n", position[axis_0], position[axis_1]);
+
+      mc_line(position, pl_data);
+    
+
+    
+  }
 
 }
 

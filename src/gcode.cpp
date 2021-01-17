@@ -284,7 +284,7 @@ uint8_t gc_execute_line(char *line)
 
       // NOTE: All remaining letters assign values.
       default:
-
+       // printf("gc_state.modal.motion %d \n",gc_state.modal.motion);
         /* Non-Command Words: This initial parsing phase only checks for repeats of the remaining
            legal g-code words and stores their value. Error-checking is performed later since some
            words (I,J,K,L,P,R) have multiple connotations and/or depend on the issued commands. */
@@ -293,15 +293,30 @@ uint8_t gc_execute_line(char *line)
           // case 'B': // Not supported
           // case 'C': // Not supported
           // case 'D': // Not supported
+
+          //PLT_V2 Bezier implementation
           case 'F': word_bit = WORD_F; gc_block.values.f = value; break;
           // case 'H': // Not supported
-          case 'I': word_bit = WORD_I; gc_block.values.ijk[X_AXIS] = value; ijk_words |= (1<<X_AXIS); break;
-          case 'J': word_bit = WORD_J; gc_block.values.ijk[Y_AXIS] = value; ijk_words |= (1<<Y_AXIS); break;
+          case 'I': 
+           //PLT_V2 Bezier implementation
+              if(gc_block.modal.motion == MOTION_MODE_BEZIER){word_bit = WORD_Q;gc_block.values.offset_a[X_AXIS] = value;break;}
+              else{word_bit = WORD_I; gc_block.values.ijk[X_AXIS] = value; ijk_words |= (1<<X_AXIS); break;}
+          
+          case 'J': 
+           //PLT_V2 Bezier implementation
+              if(gc_block.modal.motion == MOTION_MODE_BEZIER){word_bit = WORD_Q;gc_block.values.offset_a[Y_AXIS] = value;break;}
+               else{word_bit = WORD_J; gc_block.values.ijk[Y_AXIS] = value; ijk_words |= (1<<Y_AXIS); break;}
           case 'K': word_bit = WORD_K; gc_block.values.ijk[Z_AXIS] = value; ijk_words |= (1<<Z_AXIS); break;
           case 'L': word_bit = WORD_L; gc_block.values.l = int_value; break;
           case 'N': word_bit = WORD_N; gc_block.values.n = trunc(value); break;
-          case 'P': word_bit = WORD_P; gc_block.values.p = value; break;
-          case 'Q': word_bit = WORD_Q; gc_block.values.q = value; break;
+          case 'P': 
+           //PLT_V2 Bezier implementation
+             if(gc_block.modal.motion == MOTION_MODE_BEZIER){word_bit = WORD_Q;gc_block.values.offset_b[X_AXIS] = value;break;}
+              else{word_bit = WORD_P; gc_block.values.p = value; break;}
+          case 'Q': 
+           //PLT_V2 Bezier implementation
+             if(gc_block.modal.motion == MOTION_MODE_BEZIER){word_bit = WORD_Q;gc_block.values.offset_b[Y_AXIS] = value;break;}
+              else{word_bit = WORD_Q; gc_block.values.q = value; break;}
           // NOTE: For certain commands, P value must be an integer, but none of these commands are supported.
           // case 'Q': // Not supported
           case 'R': word_bit = WORD_R; gc_block.values.r = value; break;
@@ -313,10 +328,14 @@ uint8_t gc_execute_line(char *line)
           case 'X': word_bit = WORD_X; gc_block.values.xyz[X_AXIS] = value; axis_words |= (1<<X_AXIS); break;
           case 'Y': word_bit = WORD_Y; gc_block.values.xyz[Y_AXIS] = value; axis_words |= (1<<Y_AXIS); break;
           case 'Z': word_bit = WORD_Z; gc_block.values.xyz[Z_AXIS] = value; axis_words |= (1<<Z_AXIS); break;
+
+          
+
           default: FAIL(STATUS_GCODE_UNSUPPORTED_COMMAND);
         }
 
         // NOTE: Variable 'word_bit' is always assigned, if the non-command letter is valid.
+        if(word_bit != WORD_Q){  //PLT_V2 Bezier implementation Word q geets set if a G5 is present
         if (bit_istrue(value_words,bit(word_bit))) { FAIL(STATUS_GCODE_WORD_REPEATED); } // [Word repeated]
         // Check for invalid negative values for words F, N, P, T, and S.
         // NOTE: Negative value check is done here simply for code-efficiency.
@@ -324,7 +343,7 @@ uint8_t gc_execute_line(char *line)
           if (value < 0.0) { FAIL(STATUS_NEGATIVE_VALUE); } // [Word value cannot be negative]
         }
         value_words |= bit(word_bit); // Flag to indicate parameter assigned.
-
+        }
     }
   }
   // Parsing complete!
@@ -827,7 +846,7 @@ uint8_t gc_execute_line(char *line)
   } else {
     bit_false(value_words,(bit(WORD_N)|bit(WORD_F)|bit(WORD_S)|bit(WORD_T))); // Remove single-meaning value words.
   }
-  if (axis_command) { bit_false(value_words,(bit(WORD_X)|bit(WORD_Y)|bit(WORD_Z))); } // Remove axis words.
+   if (axis_command) { bit_false(value_words,(bit(WORD_X)|bit(WORD_Y)|bit(WORD_Z))); } // Remove axis words.
   if (value_words) { FAIL(STATUS_GCODE_UNUSED_WORDS); } // [Unused words]
 
   /* -------------------------------------------------------------------------------------
@@ -1047,7 +1066,7 @@ uint8_t gc_execute_line(char *line)
         mc_arc(gc_block.values.xyz, pl_data, gc_state.position, gc_block.values.ijk, gc_block.values.r,
             axis_0, axis_1, axis_linear, bit_istrue(gc_parser_flags,GC_PARSER_ARC_IS_CLOCKWISE));
       } else if ((gc_state.modal.motion == MOTION_MODE_BEZIER)) {
-        mc_bezier(gc_block.values.xyz, pl_data, gc_state.position, gc_block.values.ijk, gc_block.values.p,gc_block.values.q,
+        mc_bezier(gc_block.values.xyz, pl_data, gc_state.position, gc_block.values.offset_a, gc_block.values.offset_b,
             axis_0, axis_1, axis_linear);
       } else {
         // NOTE: gc_block.values.xyz is returned from mc_probe_cycle with the updated position value. So
