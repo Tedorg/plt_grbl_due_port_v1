@@ -88,7 +88,7 @@ DUE
 
 #define SPINDLE_TIMER Timer1
 #define Spindle_PWM 16      /* output pin for Spindle PWM */
-#define Spindle_PERIOD 2000 /* 500 hz */
+#define Spindle_PERIOD 500 /* 500 hz */
 
 #ifdef CW_BOARD
   #define Encoder_XA 13 /* X encoder phases A & B */

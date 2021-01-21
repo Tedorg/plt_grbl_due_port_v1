@@ -250,8 +250,8 @@ void mc_bezier(
   uint8_t axis_linear
   )
 {
-  printf("target: %f %f Position:  %f %f   Offset I  %f  J  %f   P %f  Q  %f  \n", target[0], target[1], position[0], position[1], offset_a[0], offset_a[1],  offset_b[0], offset_b[1]);
-
+  //printf("target: %f %f Position:  %f %f   Offset I  %f  J  %f   P %f  Q  %f  \n", target[0], target[1], position[0], position[1], offset_a[0], offset_a[1],  offset_b[0], offset_b[1]);
+//Adpated from Marlin 
 float first[2] = {
     position[0] + offset_a[0],
     position[1] + offset_a[1]
@@ -268,11 +268,7 @@ float first[2] = {
   
   float step = MAX_STEP;
 
-  
-
   for (float t = 0; t < 1;) {
-
-    
 
     // First try to reduce the step in order to make it sufficiently
     // close to a linear interpolation.

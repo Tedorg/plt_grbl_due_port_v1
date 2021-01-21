@@ -151,7 +151,7 @@ void MotorPID_Timer_handler(void) // PID interrupt service routine
   static bool xdir=0,ydir=0,zdir=0;
   static bool old_xdir=0,old_ydir=0,old_zdir=0;
   // printf("x: %li \n",REG_TC2_CV0);
-  serialScanner_handler();
+  //serialScanner_handler();
   //report_util_encoder_values(REG_TC2_CV0);
   x_axis.axis_Position = sys_real_position[X_AXIS] = REG_TC0_CV0; // Todo -1 quick fix just for now
   y_axis.axis_Position = sys_real_position[Y_AXIS] = REG_TC2_CV0;      // Value of Encoder 2
@@ -220,7 +220,8 @@ old_zdir = zdir;
   pid_busy = 0;
 //delay_us(10);
 #endif
-  digitalWrite(HeartBeatLED, healthLEDcounter++ & 0x40);
+  if(x_had_step||y_had_step)digitalWrite(HeartBeatLED, 1);
+  else digitalWrite(HeartBeatLED, 0);
 }
 
 void activateCNT_TC0() // X Axis
@@ -309,7 +310,7 @@ void setup()
   pinMode(X_STEP, OUTPUT);
   pinMode(X_ENABLE, OUTPUT);
   pinMode(X_DIRECTION, OUTPUT);
-  pinMode(Encoder_XA, INPUT_PULLUP);
+  //pinMode(Encoder_XA, INPUT_PULLUP);
   // pinMode(Encoder_XB, INPUT_PULLUP);
 
   pinMode(Y_STEP, OUTPUT);
@@ -331,6 +332,7 @@ void setup()
   //
   // initialize hard-time MotorPID_Timer for servos (10ms loop)
   Timer5.attachInterrupt(MotorPID_Timer_handler).setPeriod(1100);
+  Timer8.attachInterrupt(serialScanner_handler).setPeriod(500).start();
 
   // hook up encoders
   //attachInterrupt(digitalPinToInterrupt(Encoder_XA), update_Encoder_XA, CHANGE);
@@ -339,7 +341,7 @@ void setup()
   // attachInterrupt(digitalPinToInterrupt(Encoder_YB), update_Encoder_YB, CHANGE);
   // attachInterrupt(digitalPinToInterrupt(Encoder_ZA), update_Encoder_ZA, CHANGE);
   // attachInterrupt(digitalPinToInterrupt(Encoder_ZB), update_Encoder_ZB, CHANGE);
-
+//spindle_init();
   serial_init(); // Setup serial baud rate and interrupts for machine port
 
   settings_init(); // Load Grbl settings from EEPROM
