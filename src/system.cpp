@@ -19,35 +19,7 @@
 */
 
 #include "grbl.h"
-#ifdef PLT_V2
 
-#include "MaslowDue.h"
-#endif
-#ifdef MASLOWCNC
-  #include "MaslowDue.h"
-
-  #define SPROCKET_RADIUS_MM      (10.1)
-    
-  // void  triangularInverse   (float xTarget,float yTarget, float* aChainLength, float* bChainLength);
-  // void  triangular(float aChainLength, float bChainLength, float *x,float *y );
-  // void  recomputeGeometry(void);
-  float height_to_bit; //distance between sled attach point and bit
-  float R = SPROCKET_RADIUS_MM;                      //sprocket radius
-  float halfWidth;                     //Half the machine width
-  float halfHeight;                    //Half the machine height
-  void _verifyValidTarget(float* xTarget,float* yTarget);
-  float _xCordOfMotor;
-  float _yCordOfMotor;
-
-  // Motor axes length to the bit for triangular kinematics
-  float Motor1Distance; //left motor axis distance to sled
-  float Motor2Distance; //right motor axis distance to sled
-
-  // output = chain lengths measured from 12 o'clock
-  float Chain1; //left chain length 
-  float Chain2; //right chain length
-    
-#endif
 
 void system_init()
 {
@@ -85,7 +57,7 @@ uint8_t system_control_get_state()
   return(control_state);
 }
 
-
+//If switches are attached directly to Pins, not used in PLT_V2
 // Pin change interrupt for pin-out commands, i.e. cycle start, feed hold, and reset. Sets
 // only the realtime command execute variable to have the main program execute these when
 // its ready. This works exactly like the character-based realtime commands when picked off
@@ -196,12 +168,7 @@ uint8_t system_execute_line(char *line)
       // Block any system command that requires the state as IDLE/ALARM. (i.e. EEPROM, homing)
       if ( !(sys.state == STATE_IDLE || sys.state == STATE_ALARM) ) { return(STATUS_IDLE_ERROR); }
       switch( line[1] ) {
-        #ifdef MASLOWCNC
-          case '|':
-            // EEPROM diagnostic Viewer
-            EEPROM_viewer();
-            break;
-        #endif
+        
         case '#' : // Print Grbl NGC parameters
           if ( line[2] != 0 ) { return(STATUS_INVALID_STATEMENT); }
           else { report_ngc_parameters(); }
@@ -404,120 +371,6 @@ uint8_t system_check_travel_limits(float *target)
   }
   return(false);
 }
-
-
-#if defined( MASLOWCNC) && not defined(PLT_V2)
-
-// recalculate machine base dimensions from settings (in mm)
-  void recomputeGeometry(void)
-  {
-      /*
-      Some variables are computed on class creation for the geometry of the machine to reduce overhead,
-      calling this function regenerates those values.
-      */
-      halfWidth = (settings.machineWidth / 2.0);
-      halfHeight = (settings.machineHeight / 2.0);
-      _xCordOfMotor = (settings.distBetweenMotors/2);
-      _yCordOfMotor = (halfHeight + settings.motorOffsetY);
-  }
-
-// Maslow math - coordinate system tranformation
-// calculate machine coordinate (x-y) postion from chain lengths in mm (pos in mm)
-  void triangular(float aChainLength, float bChainLength, float *x,float *y )
-  { 
-    recomputeGeometry();
-//----------------------------------------------------------------------> arbitrary triangle method:
-//                   cos(B) = ((b^2 + c^2 - a^2) / (2 * b * c))
-//                   theta = arccos(B)
-//                   x = a * cos(theta)
-//                   y = a * sin(theta)
-//
-//     double theta = acos( (pow((_xCordOfMotor * 2), 2) + pow(aChainLength,2) - pow(bChainLength,2)) / (-2.0 * aChainLength * (_xCordOfMotor * 2)));
-//     double x_pos = (aChainLength * cos(theta));
-//     double y_pos = (aChainLength * sin(theta));
-//
-//----------------------------------------------------------------------> intersecting circle method:
-//                    x = (d^2 - R^2 + L^2) / 2 * d
-//                     where d is the distance between motors
-//                    R is right chain length
-//                    L is left chain length
-//                    y^2 = R^2 - x^2
-//
-     double x_pos = ((pow((_xCordOfMotor * 2), 2) - pow(bChainLength,2) +  pow(aChainLength,2)) / (2.0 * (_xCordOfMotor * 2)));
-     double y_pos = sqrt(pow(aChainLength,2) - pow(x_pos,2));
-//
-     x_pos = (float)(-1*_xCordOfMotor) + x_pos;  // apply table offsets to regain absolute position
-     y_pos = (float)(_yCordOfMotor - y_pos);
-     
-// back out any correction factor
-     x_pos /= (double)settings.XcorrScaling;
-     y_pos /= (double)settings.YcorrScaling;
-//     
-     *x = (float) x_pos;
-     *y = (float) y_pos;
-  }
-
-// Maslow CNC calculation only. Returns x or y-axis "steps" based on Maslow motor steps.
-// converts current position two-chain intersection (steps) into x / y cartesian in STEPS..  
-  void system_convert_maslow_to_xy_steps(int32_t *steps, int32_t *x_steps, int32_t *y_steps)
-  {
-    float x_pos, y_pos; 
-
-    triangular((float)(steps[LEFT_MOTOR]/settings.steps_per_mm[LEFT_MOTOR]), 
-               (float)(steps[RIGHT_MOTOR]/settings.steps_per_mm[RIGHT_MOTOR]),  
-                      &x_pos, &y_pos);
-                              
-    *x_steps = (int32_t) x_pos * settings.steps_per_mm[X_AXIS];
-    *y_steps = (int32_t) y_pos * settings.steps_per_mm[Y_AXIS];
-  }
-
-  int32_t system_convert_maslow_to_x_axis_steps(int32_t *steps)
-  {
-    int32_t x_steps, y_steps; 
-    system_convert_maslow_to_xy_steps(steps, &x_steps, &y_steps);  
-    return(x_steps);
-  }
-  
-  int32_t system_convert_maslow_to_y_axis_steps(int32_t *steps)
-  {
-    int32_t x_steps, y_steps; 
-    system_convert_maslow_to_xy_steps(steps, &x_steps, &y_steps);  
-    return(y_steps);
-  }
-
-// limit motion to stay within table (in mm)  
-  void verifyValidTarget(float* xTarget,float* yTarget)
-  {
-      //If the target point is beyond one of the edges of the board, the machine stops at the edge
-
-      recomputeGeometry();   
-// no limits for now
-//      *xTarget = (*xTarget < -halfWidth) ? -halfWidth : (*xTarget > halfWidth) ? halfWidth : *xTarget;
-//      *yTarget = (*yTarget < -halfHeight) ? -halfHeight : (*yTarget > halfHeight) ? halfHeight : *yTarget;
-  
-  }
-
-// calculate left and right (LEFT_MOTOR/RIGHT_MOTOR) chain lengths from X-Y cartesian coordinates  (in mm)
-// target is an absolute position in the frame
-  void triangularInverse(float xTarget,float yTarget, float* aChainLength, float* bChainLength)
-  {
-      //Confirm that the coordinates are on the table
-      verifyValidTarget(&xTarget, &yTarget);
-
-      // scale target (absolute position) by any correction factor
-      double xxx = (double)xTarget * (double)settings.XcorrScaling;
-      double yyy = (double)yTarget * (double)settings.YcorrScaling;
-  
-      //Calculate motor axes length to the bit
-      double Motor1Distance = sqrt(pow((double)(-1*_xCordOfMotor) - (double)(xxx),2)+pow((double)(_yCordOfMotor) - (double(yyy)),2));
-      double Motor2Distance = sqrt(pow((double)   (_xCordOfMotor) - (double)(xxx),2)+pow((double)(_yCordOfMotor) - (double)(yyy),2));
-
-      *aChainLength = Motor1Distance;
-      *bChainLength = Motor2Distance;
-      return;
-  }
-
-#endif
 
 // Special handlers for setting and clearing Grbl's real-time execution flags.
 void system_set_exec_state_flag(uint8_t mask) {

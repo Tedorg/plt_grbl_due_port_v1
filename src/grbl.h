@@ -61,7 +61,7 @@
 // Define the Grbl system include files. NOTE: Do not alter organization.
 #include "config.h"
 //Plotter V2
-
+#include "encoder.h"
 #include "filesys.h"
 
 //

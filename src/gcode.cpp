@@ -54,7 +54,7 @@ void gc_init()
 // limit pull-off routines.
 void gc_sync_position()
 {
-  system_convert_array_steps_to_mpos(gc_state.position,sys_position);
+  system_convert_array_steps_to_mpos(gc_state.position,sys.position);
 }
 
 
@@ -1083,7 +1083,7 @@ uint8_t gc_execute_line(char *line)
       if (gc_update_pos == GC_UPDATE_POS_TARGET) {
         memcpy(gc_state.position, gc_block.values.xyz, sizeof(gc_block.values.xyz)); // gc_state.position[] = gc_block.values.xyz[]
       } else if (gc_update_pos == GC_UPDATE_POS_SYSTEM) {
-        gc_sync_position(); // gc_state.position[] = sys_position
+        gc_sync_position(); // gc_state.position[] = sys.position
       } // == GC_UPDATE_POS_NONE
     }     
   }

@@ -158,6 +158,9 @@ unsigned char eeprom_get_char( unsigned int addr )
 
 void eeprom_put_char( unsigned int addr, unsigned char new_value )
 {
+  //sizeof(new_value);
+
+	
     // int i;
     
     // eeprom_set_addr(EEWR, addr);
@@ -181,13 +184,16 @@ void eeprom_put_char( unsigned int addr, unsigned char new_value )
 }
 
 void memcpy_to_eeprom_with_checksum(unsigned int destination, char *source, unsigned int size) {
-  // unsigned char checksum = 0;
-  // for(; size > 0; size--) { 
-  //   checksum = (checksum << 1) || (checksum >> 7);
-  //   checksum += *source;
-  //   eeprom_put_char(destination++, *(source++)); 
-  // }
-  // eeprom_put_char(destination, checksum);
+  unsigned char checksum = 0;
+  Serial.println(size);
+  for(; size > 0; size--) { 
+    checksum = (checksum << 1) || (checksum >> 7);
+    checksum += *source;
+    //eeprom_put_char(destination++, *(source++)); 
+  }
+ const char *a = new char(checksum);
+printf("des: %lf", atof(a)); // 3735928559
+  //eeprom_put_char(destination, checksum);
 }
 
 int memcpy_from_eeprom_with_checksum(char *destination, unsigned int source, unsigned int size) {
@@ -203,7 +209,7 @@ int memcpy_from_eeprom_with_checksum(char *destination, unsigned int source, uns
 
 void store_current_machine_pos(void)
 {
-   memcpy_to_eeprom_with_checksum(EEPROM_ADDR_MACHINE_STATE+0x10,(char *)sys_position,sizeof(sys_position));
+   memcpy_to_eeprom_with_checksum(EEPROM_ADDR_MACHINE_STATE+0x10,(char *)sys.position,sizeof(sys.position));
    memcpy_to_eeprom_with_checksum(EEPROM_ADDR_MACHINE_STATE+0x40,(char *)pl.position,sizeof(pl.position));
    memcpy_to_eeprom_with_checksum(EEPROM_ADDR_MACHINE_STATE+0x80,(char *)gc_state.coord_system,sizeof(gc_state.coord_system));
    memcpy_to_eeprom_with_checksum(EEPROM_ADDR_MACHINE_STATE+0x100,(char *)gc_state.coord_offset,sizeof(gc_state.coord_offset));
@@ -223,7 +229,7 @@ void recall_current_machine_pos(void)
       eeprom_put_char(EEPROM_ADDR_MACHINE_STATE,0xA5);      
       DEBUG_COM_PORT.print("EEMS Init\n");  
    }
-   memcpy_from_eeprom_with_checksum((char *)sys_position,EEPROM_ADDR_MACHINE_STATE+0x10,sizeof(sys_position));
+   memcpy_from_eeprom_with_checksum((char *)sys.position,EEPROM_ADDR_MACHINE_STATE+0x10,sizeof(sys.position));
    memcpy_from_eeprom_with_checksum((char *)pl.position,EEPROM_ADDR_MACHINE_STATE+0x40,sizeof(pl.position));
    memcpy_from_eeprom_with_checksum((char *)gc_state.coord_system,EEPROM_ADDR_MACHINE_STATE+0x80,sizeof(gc_state.coord_system));
    memcpy_from_eeprom_with_checksum((char *)gc_state.coord_offset,EEPROM_ADDR_MACHINE_STATE+0x100,sizeof(gc_state.coord_offset));

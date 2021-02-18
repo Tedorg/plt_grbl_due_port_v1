@@ -165,8 +165,8 @@ void settings_write_coord_data(uint8_t coord_select, float *coord_data)
 // NOTE: This function can only be called in IDLE state.
 void write_global_settings()
 {
-  // eeprom_put_char(0, SETTINGS_VERSION);
-  // memcpy_to_eeprom_with_checksum(EEPROM_ADDR_GLOBAL, (char*)&settings, sizeof(settings_t));
+  eeprom_put_char(0, SETTINGS_VERSION);
+  memcpy_to_eeprom_with_checksum(EEPROM_ADDR_GLOBAL, (char*)&settings, sizeof(settings_t));
 }
 
 

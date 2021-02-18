@@ -40,7 +40,7 @@ static float pwm_gradient; // Precalulated value to speed up rpm to PWM conversi
 
 void spindle_init()
 {    
- //Timer8.attachInterrupt(Spindle_SPINDLE_TIMER_handler).setPeriod(Spindle_PERIOD).start();
+ //SERIAL_TIMER.attachInterrupt(Spindle_SPINDLE_TIMER_handler).setPeriod(Spindle_PERIOD).start();
   //no spindel on a plotter
 }
 

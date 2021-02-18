@@ -69,21 +69,42 @@ DUE
   #define X_STEP  40      // 40	PC8	Digital Pin 40 
   #define X_ENABLE 26     // 26	PD1	Digital pin 26
   #define X_DIRECTION 24  // 24	PA15	Digital Pin 24
+  #define X_CS_PIN 48  // 24	PA15	Digital Pin 24
+  #define X_LIMIT_PIN 23   // 24	PA15	Digital Pin 24
+  
   
   #define Y_ENABLE 32     // 32	PD10	Digital Pin 32
   #define Y_STEP  28      // 28	PD3	Digital Pin 28
   #define Y_DIRECTION 30  // 30	PD9	Digital Pin 30
+  #define Y_CS_PIN  49// 24	PA15	Digital Pin 24
+  #define Y_LIMIT_PIN  25 // 24	PA15	Digital Pin 24
 
   #define Z_ENABLE 38     //38	PC6	Digital Pin 38
   #define Z_STEP  34      // 34	PC2	Digital Pin 34
   #define Z_DIRECTION 36   //36	PC4	Digital Pin 36
-
+  #define Z_CS_PIN  50// 24	PA15	Digital Pin 24
+  #define Z_LIMIT_PIN 51  // 24	PA15	Digital Pin 24
+   
  
 #endif
+
+#define X_LIMIT_BIT      14  // Due pin 23 - A.14
+#define Y_LIMIT_BIT      0 // Due pin 25 - D.0
+#define Z_LIMIT_BIT      12  // Due pin 51 - C.12
+
 
 
 #define SCLpin  15    /* EEPROM i2c signals */
 #define SDApin  14
+
+
+/*Stepper Timers */
+#define ST_MAIN_TIMER Timer4
+#define ST_RESET_TIMER Timer3
+#define ST_SYNCH_TIMER Timer5
+
+/*Serial Handler Timer*/
+#define SERIAL_TIMER Timer8
 
 
 #define SPINDLE_TIMER Timer1
@@ -150,13 +171,7 @@ DUE
 // Define homing/hard limit switch input pins and limit interrupt vectors. 
 // NOTE: All limit bit pins must be on the same port, but not on a port with other input pins (CONTROL).
 
-#define X_LIMIT_BIT      25  // Due pin 25 - A.14
-#define Y_LIMIT_BIT      23 // Due pin 23 - D.0
-#ifdef VARIABLE_SPINDLE   // Z Limit pin and spindle enabled swapped to access hardware PWM on Pin 11.  
-  #define Z_LIMIT_BIT     13 // Due pin 50 - C.13
-#else
-  #define Z_LIMIT_BIT    12  // Due pin 51 - C.12
-#endif
+
 
 //  
 //// Define probe switch input pin.

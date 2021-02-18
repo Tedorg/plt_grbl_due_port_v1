@@ -276,15 +276,15 @@ void limits_go_home(uint8_t cycle_mask)
      
       #ifdef PLT_V2
         if (idx==X_AXIS) {
-          //int32_t off_axis_position = system_convert_corexy_to_y_axis_steps(sys_position);
-          sys_position[A_MOTOR] = set_axis_position + off_axis_position;
-          sys_position[B_MOTOR] = set_axis_position - off_axis_position;
+          //int32_t off_axis_position = system_convert_corexy_to_y_axis_steps(sys.position);
+          sys.position[A_MOTOR] = set_axis_position + off_axis_position;
+          sys.position[B_MOTOR] = set_axis_position - off_axis_position;
         } else if (idx==Y_AXIS) {
-          //int32_t off_axis_position = system_convert_corexy_to_x_axis_steps(sys_position);
-          sys_position[A_MOTOR] = off_axis_position + set_axis_position;
-          sys_position[B_MOTOR] = off_axis_position - set_axis_position;
+          //int32_t off_axis_position = system_convert_corexy_to_x_axis_steps(sys.position);
+          sys.position[A_MOTOR] = off_axis_position + set_axis_position;
+          sys.position[B_MOTOR] = off_axis_position - set_axis_position;
         } else {
-          sys_position[idx] = set_axis_position;
+          sys.position[idx] = set_axis_position;
         }
    
 #endif

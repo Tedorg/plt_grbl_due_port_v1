@@ -99,7 +99,7 @@ void serial_init()
 {
   #ifdef PLT_V2
         MACHINE_COM_PORT.begin(BAUD_RATE);
-       
+       SERIAL_TIMER.attachInterrupt(serialScanner_handler).setPeriod(500).start();
     // defaults to 8-bit, no parity, 1 stop bit
     serial_reset_read_buffer();
   #else

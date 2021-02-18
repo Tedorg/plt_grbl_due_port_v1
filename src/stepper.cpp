@@ -28,8 +28,8 @@
 #include "MaslowDue.h"
 #include "DueTimer.h"
 
-void timer3_handler(void); // used as the GRBL TMR0 replacement
-void timer4_handler(void); // used as the GRBL TMR1 replacement
+void ST_RESET_TIMER_handler(void); // used as the GRBL TMR0 replacement
+void ST_MAIN_TIMER_handler(void); // used as the GRBL TMR1 replacement
 #endif
 
 // Some useful constants.
@@ -209,10 +209,31 @@ static st_prep_t prep;
 // Stepper state initialization. Cycle should only start if the st.cycle_start flag is
 // enabled. Startup init and limits call this function but shouldn't start the cycle.
 
+void motorsEnabled(void)
+{
+  //Motors_Disabled = 0;
+
+  digitalWrite(X_ENABLE, 0); // disable the motor driver
+  digitalWrite(Y_ENABLE, 0);
+  digitalWrite(Z_ENABLE, 0);
+}
+
+void motorsDisabled(void)
+{
+ // Motors_Disabled = 1;
+
+  digitalWrite(X_ENABLE, 1); // Enable the motor driver
+  digitalWrite(Y_ENABLE, 1);
+  digitalWrite(Z_ENABLE, 1);
+
+  //  DEBUG_COM_PORT.print("MOTORS ON\n");
+}
+
+
 void st_wake_up()
 {
   motorsEnabled(); //enable stepper drivers
-  Timer5.stop();
+  ST_SYNCH_TIMER.stop();
   if (sys.state & (STATE_CYCLE | STATE_HOMING))
   {
     // Initialize stepper output bits
@@ -234,7 +255,7 @@ void st_wake_up()
 
 #ifdef PLT_V2
 
-  Timer4.attachInterrupt(timer4_handler).start(settings.pulse_microseconds * 100);
+  ST_MAIN_TIMER.attachInterrupt(ST_MAIN_TIMER_handler).start(settings.pulse_microseconds * 100);
 
 #endif
 }
@@ -242,7 +263,7 @@ void st_wake_up()
 bool pin_state = false; // Keep enabled.
 void stepperTimeoutHandler(void)
 {
-  Timer3.stop();
+  ST_RESET_TIMER.stop();
   if (bit_istrue(settings.flags, BITFLAG_INVERT_ST_ENABLE))
   {
     pin_state = !pin_state;
@@ -254,8 +275,8 @@ void stepperTimeoutHandler(void)
 void st_go_idle()
 {
 
-  Timer4.stop();
-  Timer5.start();
+  ST_MAIN_TIMER.stop();
+  ST_SYNCH_TIMER.start();
 
   busy = false;
 
@@ -265,7 +286,7 @@ void st_go_idle()
     // Force stepper dwell to lock axes for a defined amount of time to ensure the axes come to a complete
     // stop and not drift from residual inertial forces at the end of the last movement.
 
-    Timer3.attachInterrupt(stepperTimeoutHandler).start(settings.stepper_idle_lock_time * 1000);
+    ST_RESET_TIMER.attachInterrupt(stepperTimeoutHandler).start(settings.stepper_idle_lock_time * 1000);
 
     pin_state = true; // Override. Disable steppers.
   }
@@ -352,11 +373,11 @@ void pulseSteppers(char out)
 #endif
 
 #ifdef PLT_V2
-void timer4_handler(void)
+void ST_MAIN_TIMER_handler(void)
 
 #endif
 {
-  //Serial.println("timer4");
+  //Serial.println("ST_MAIN_TIMER");
   if (busy)
   {
     return;
@@ -401,7 +422,7 @@ void timer4_handler(void)
          // NOTE: The remaining code in this ISR will finish before returning to main program.
 
 #else
-  Timer4.stop(); // MASLOW is a brushed motor setup with PID loops (steps=encoder counts)
+  ST_MAIN_TIMER.stop(); // MASLOW is a brushed motor setup with PID loops (steps=encoder counts)
   static char LastPort;
 #ifdef PLT_V2_ENCODER
   if ((st.dir_outbits & (1 << X_DIRECTION_BIT)) == 0)
@@ -422,24 +443,24 @@ void timer4_handler(void)
 
 #endif
 
-  //'Left Motor' 
-  if ((st.step_outbits & (1 << X_STEP_BIT)) && (st.dir_outbits & (1 << X_DIRECTION_BIT)) == 0)
-      x_axis.target++;
-  else if ((st.step_outbits & (1 << X_STEP_BIT)) && (st.dir_outbits & (1 << X_DIRECTION_BIT)))
-      x_axis.target--;
+  // //'Left Motor' 
+  // if ((st.step_outbits & (1 << X_STEP_BIT)) && (st.dir_outbits & (1 << X_DIRECTION_BIT)) == 0)
+  //     x_axis.target++;
+  // else if ((st.step_outbits & (1 << X_STEP_BIT)) && (st.dir_outbits & (1 << X_DIRECTION_BIT)))
+  //     x_axis.target--;
 
-  // REVERSED 'Right Motor'
-  if ((st.step_outbits & (1 << Y_STEP_BIT)) && (st.dir_outbits & (1 << Y_DIRECTION_BIT)) == 0)
-    y_axis.target++; //=== !!
-  else if ((st.step_outbits & (1 << Y_STEP_BIT)) && (st.dir_outbits & (1 << Y_DIRECTION_BIT)))
-    y_axis.target--; //=== !!
-                     //print_uint8_base10(y_axis.target);
-                     // Z-axis
-  if ((st.step_outbits & (1 << Z_STEP_BIT)) && (st.dir_outbits & (1 << Z_DIRECTION_BIT)) == 0)
-    z_axis.target++;
-  else if ((st.step_outbits & (1 << Z_STEP_BIT)) && (st.dir_outbits & (1 << Z_DIRECTION_BIT)))
-    z_axis.target--;
-    // //   //print_uint8_base10(z_axis.target);
+  // // REVERSED 'Right Motor'
+  // if ((st.step_outbits & (1 << Y_STEP_BIT)) && (st.dir_outbits & (1 << Y_DIRECTION_BIT)) == 0)
+  //   y_axis.target++; //=== !!
+  // else if ((st.step_outbits & (1 << Y_STEP_BIT)) && (st.dir_outbits & (1 << Y_DIRECTION_BIT)))
+  //   y_axis.target--; //=== !!
+  //                    //print_uint8_base10(y_axis.target);
+  //                    // Z-axis
+  // if ((st.step_outbits & (1 << Z_STEP_BIT)) && (st.dir_outbits & (1 << Z_DIRECTION_BIT)) == 0)
+  //   z_axis.target++;
+  // else if ((st.step_outbits & (1 << Z_STEP_BIT)) && (st.dir_outbits & (1 << Z_DIRECTION_BIT)))
+  //   z_axis.target--;
+  //   // //   //print_uint8_base10(z_axis.target);
 
 #ifdef PLT_V2_ENCODER
 
@@ -472,7 +493,7 @@ void timer4_handler(void)
       // Initialize step segment timing per step and load number of steps to execute.
       OCR1A = st.exec_segment->cycles_per_tick;
 #else
-      Timer4.setPeriod(st.exec_segment->cycles_per_tick); // cycles are now in uS.!!
+      ST_MAIN_TIMER.setPeriod(st.exec_segment->cycles_per_tick); // cycles are now in uS.!!
 #endif
 
       st.step_count = st.exec_segment->n_step; // NOTE: Can sometimes be zero when moving slow.
@@ -537,11 +558,11 @@ void timer4_handler(void)
     st.counter_x -= st.exec_block->step_event_count;
     if (st.exec_block->direction_bits[X_AXIS] & (1 << DIRECTION_BIT(X_AXIS)))
     {
-      sys_position[X_AXIS]--;
+      sys.position[X_AXIS]--;
     }
     else
     {
-      sys_position[X_AXIS]++;
+      sys.position[X_AXIS]++;
     }
   }
 #else
@@ -551,11 +572,11 @@ void timer4_handler(void)
     st.counter_x -= st.exec_block->step_event_count;
     if (st.exec_block->direction_bits & (1 << X_DIRECTION_BIT))
     {
-      sys_position[X_AXIS]--;
+      sys.position[X_AXIS]--;
     }
     else
     {
-      sys_position[X_AXIS]++;
+      sys.position[X_AXIS]++;
     }
   }
 #endif // Ramps Board
@@ -572,11 +593,11 @@ void timer4_handler(void)
     st.counter_y -= st.exec_block->step_event_count;
     if (st.exec_block->direction_bits[Y_AXIS] & (1 << DIRECTION_BIT(Y_AXIS)))
     {
-      sys_position[Y_AXIS]--;
+      sys.position[Y_AXIS]--;
     }
     else
     {
-      sys_position[Y_AXIS]++;
+      sys.position[Y_AXIS]++;
     }
   }
 #else
@@ -586,11 +607,11 @@ void timer4_handler(void)
     st.counter_y -= st.exec_block->step_event_count;
     if (st.exec_block->direction_bits & (1 << Y_DIRECTION_BIT))
     {
-      sys_position[Y_AXIS]--;
+      sys.position[Y_AXIS]--;
     }
     else
     {
-      sys_position[Y_AXIS]++;
+      sys.position[Y_AXIS]++;
     }
   }
 #endif // Ramps Board
@@ -606,11 +627,11 @@ void timer4_handler(void)
     st.counter_z -= st.exec_block->step_event_count;
     if (st.exec_block->direction_bits[Z_AXIS] & (1 << DIRECTION_BIT(Z_AXIS)))
     {
-      sys_position[Z_AXIS]--;
+      sys.position[Z_AXIS]--;
     }
     else
     {
-      sys_position[Z_AXIS]++;
+      sys.position[Z_AXIS]++;
     }
   }
 #else
@@ -620,11 +641,11 @@ void timer4_handler(void)
     st.counter_z -= st.exec_block->step_event_count;
     if (st.exec_block->direction_bits & (1 << Z_DIRECTION_BIT))
     {
-      sys_position[Z_AXIS]--;
+      sys.position[Z_AXIS]--;
     }
     else
     {
-      sys_position[Z_AXIS]++;
+      sys.position[Z_AXIS]++;
     }
   }
 #endif // Ramps Board
@@ -661,7 +682,7 @@ void timer4_handler(void)
   busy = false;
 
 #ifdef PLT_V2
-  Timer4.start();
+  ST_MAIN_TIMER.start();
 #endif
 }
 
@@ -709,10 +730,10 @@ ISR(TIMER0_COMPA_vect)
 }
 #endif
 #else
-void timer3_handler(void)
+void ST_RESET_TIMER_handler(void)
 {
   // Reset step cycle..
-  Timer3.stop();
+  ST_RESET_TIMER.stop();
 }
 #endif
 

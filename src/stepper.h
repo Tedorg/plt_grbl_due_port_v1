@@ -26,6 +26,11 @@
   #define SEGMENT_BUFFER_SIZE 10
 #endif
 
+
+void motorsEnabled(void);
+void motorsDisabled(void);
+
+
 // Initialize and setup the stepper motor subsystem
 void stepper_init();
 

@@ -40,43 +40,4 @@
 #define HeartBeatLED 13
 
 
-#define bufferLength 64          // serial buffer length
-
-
-
-#define AXES_DISABLE 39
-
-#define MAX_PWM_LEVEL 255
-#define MIN_PWM_LEVEL 5
-
-
-
-struct PID_MOTION 
-{
-  long int Error;
-  long int Integral;
-  long int axis_Position;
-  long int last_Position;
-  long int target;
-  long int target_PS;
-  long int last;
-  long int Speed;
-  long int totalSpeed;
-  long int DiffTerm;
-  long int iterm;
-  long int stepSize;
-  int P_PWM;
-  int M_PWM;
-  int ENABLE;
-};
-
-extern struct PID_MOTION x_axis, y_axis, z_axis;
-extern long int xSpeed, ySpeed, zSpeed;  // current speed each axis
-extern int healthLEDcounter;
-extern int stepTestEnable;
-extern int posEnabled;
-
-void motorsEnabled(void);
-void motorsDisabled(void);
-
 #endif

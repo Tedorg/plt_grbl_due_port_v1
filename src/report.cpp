@@ -133,6 +133,7 @@ void report_status_message(uint8_t status_code)
 {
   switch(status_code) {
     case STATUS_OK: // STATUS_OK
+      status_ok = 0;
       printPgmString(PSTR("ok\r\n")); break;
     default:
       printPgmString(PSTR("error:"));
@@ -496,7 +497,7 @@ void report_realtime_status()
 {
   uint8_t idx;
   int32_t current_position[N_AXIS]; // Copy current state of the system position variable
-  memcpy(current_position,sys_position,sizeof(sys_position));
+  memcpy(current_position,sys.position,sizeof(sys.position));
   float print_position[N_AXIS];
   #ifdef PLT_V2_ENCODER 
   int32_t current_real_position[N_AXIS]; // Copy current state of the encoder position variable

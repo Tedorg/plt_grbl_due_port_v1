@@ -68,7 +68,7 @@ void sleep_init()
 
 #ifndef PLT_V2
   // Increment sleep counter with each timer overflow.
-  ISR(TIMER3_OVF_vect) { sleep_counter++; }
+  ISR(ST_RESET_TIMER_OVF_vect) { sleep_counter++; }
 #endif
 
 // Starts sleep timer if running conditions are satified. When elaped, sleep mode is executed.

@@ -124,6 +124,7 @@ typedef struct {
   uint8_t abort;               // System abort flag. Forces exit back to main loop for reset.             
   uint8_t suspend;             // System suspend bitflag variable that manages holds, cancels, and safety door.
   uint8_t soft_limit;          // Tracks soft limit errors for the state machine. (boolean)
+  int32_t position[N_AXIS]; 
   uint8_t step_control;        // Governs the step segment generator depending on system state.
   uint8_t probe_succeeded;     // Tracks if last probing cycle was successful.
   #ifdef DEFAULTS_RAMPS_BOARD
@@ -145,7 +146,6 @@ typedef struct {
 extern system_t sys;
 
 // NOTE: These position variables may need to be declared as volatiles, if problems arise.
-extern int32_t sys_position[N_AXIS];      // Real-time machine (aka home) position vector in steps.
 #ifdef PLT_V2_ENCODER
 extern int32_t sys_real_position[N_AXIS];      // Real-time machine (encoder position vector in steps.
 #endif
@@ -156,7 +156,7 @@ extern volatile uint8_t sys_rt_exec_state;   // Global realtime executor bitflag
 extern volatile uint8_t sys_rt_exec_alarm;   // Global realtime executor bitflag variable for setting various alarms.
 extern volatile uint8_t sys_rt_exec_motion_override; // Global realtime executor bitflag variable for motion-based overrides.
 extern volatile uint8_t sys_rt_exec_accessory_override; // Global realtime executor bitflag variable for spindle/coolant overrides.
-
+extern volatile uint8_t status_ok;
 #ifdef DEBUG
   #define EXEC_DEBUG_REPORT  bit(0)
   extern volatile uint8_t sys_rt_exec_debug;

@@ -112,7 +112,7 @@
   #define PROBE_MASK      (1<<PROBE_BIT)
 
   // Advanced Configuration Below You should not need to touch these variables
-  // Set Timer up to use TIMER4B which is attached to Digital Pin 7
+  // Set Timer up to use ST_MAIN_TIMERB which is attached to Digital Pin 7
   #define SPINDLE_PWM_MAX_VALUE     1024.0 // Translates to about 1.9 kHz PWM frequency at 1/8 prescaler
   #ifndef SPINDLE_PWM_MIN_VALUE
     #define SPINDLE_PWM_MIN_VALUE   1   // Must be greater than zero.
@@ -263,7 +263,7 @@
   #define PROBE_MASK      (1<<PROBE_BIT)
 
   // Advanced Configuration Below You should not need to touch these variables
-  // Set Timer up to use TIMER4B which is attached to Digital Pin 8 - Ramps 1.4 12v output with heat sink
+  // Set Timer up to use ST_MAIN_TIMERB which is attached to Digital Pin 8 - Ramps 1.4 12v output with heat sink
   #define SPINDLE_PWM_MAX_VALUE     1024.0 // Translates to about 1.9 kHz PWM frequency at 1/8 prescaler
   #ifndef SPINDLE_PWM_MIN_VALUE
   #define SPINDLE_PWM_MIN_VALUE   1   // Must be greater than zero.
@@ -301,7 +301,7 @@
 #include "cpu_map_due.h"
  
   // // Advanced Configuration Below You should not need to touch these variables
-  // // Set Timer up to use TIMER4B which is attached to Digital Pin 7
+  // // Set Timer up to use ST_MAIN_TIMERB which is attached to Digital Pin 7
    #define SPINDLE_PWM_MAX_VALUE     255.0 // Translates to about 1.9 kHz PWM frequency at 1/8 prescaler
 #ifndef SPINDLE_PWM_MIN_VALUE
 #define SPINDLE_PWM_MIN_VALUE   1   // Must be greater than zero.

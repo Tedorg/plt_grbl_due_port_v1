@@ -4,6 +4,7 @@
   // Define different comment types for pre-parsing.
   #define COMMENT_NONE 0
 #endif
+#define bufferLength 64          // serial buffer length
 
 File root;
 
@@ -23,7 +24,7 @@ void init_SD()
 void getFileList()
 { //Serial.print out all the .txt files on the SD card
     init_SD();
-    root = SD.open("/");
+    root = SD.open("/data");
     Serial.print(" SD root: ");
     Serial.println(root);
     root.rewindDirectory();
@@ -113,7 +114,7 @@ void drawFromSD(char *filename, int length)
         Serial.println(file.name());
 
         //travelDistance = 0L;
-        parseFileContents(file);
+        parseFileContents(0,file);
 
         Serial.println(" --- done parsing (disable steppers)");
 
@@ -160,17 +161,11 @@ bool hasExtension(File file, char *ext)
 }
 
 //----------------------------------------------------------------------
-void parseFileContents(File file)
+void parseFileContents(long position,File file)
 {
 
-    Serial.print("\tParsing file: ");
-    Serial.println(file.name());
-    Serial.println();
     char buf[bufferLength];
     int i = 0;
-    unsigned int max_line_counter = 0;
-    unsigned int line_counter = 0;
-    int start_line = 0;
 
     unsigned int line = 0;
     bool ignore_chars = 0;
@@ -187,49 +182,17 @@ void parseFileContents(File file)
     //	offSet.y = current_pos.y;
     //
     char c;
-    if (file)
-    {
-        while (file.available())
-        {
-            c = file.read();
-            if (c == '\n')
-                max_line_counter++;
-        }
-         file.seek(0);
-         while (line_counter < start_line) //get one line bevor to move there and make a line from there
-            {
-                c = file.read();
-                if (c == '\n')
-                    line_counter++;
-            }
-        printf("  lines: %d  ", line_counter);
-    }
-    else
-    {
-        printf("no lines counted\n");
-    }
-   
+    int status = 0;
+ 
     if (file)
     {
        
-        start_line > 0? safe_move = 1:safe_move = 0;
+        file.seek(position);
         while (file.available())
         {
+            while(status != 0){
 
-            //start at a individual line
-            // 
-
-           
-            // printf("start printing\n");
-            // check serial to see if I have to stop
-            
-            //TODO abbruchbedingung
-            // if (Serial.available() > 0)
-            // {
-            //     Serial.println("\n Drawing stopped by user");
-            //     //terminate_drawing();
-            //     break; // break out of while loop?
-            // }
+            }
             c = file.read();
             if (i < bufferLength)
             {
@@ -238,10 +201,12 @@ void parseFileContents(File file)
                 case '\n': // newline
                 case '\r':
                     buf[i] = '\0'; // end string
-                    printf("line %d / %d \n", ++line_counter, max_line_counter);
+                    
                     if (ignore_chars == 0)
                     {
                      // TODO to parser  //parseMessage(buf, i);
+                     status = 1;
+                    gc_execute_line(buf);
                     }
                     else
                     {
@@ -260,6 +225,7 @@ void parseFileContents(File file)
                     {
                         buf[i] = c;
                         i++;
+                        Serial.print(c);
                     }
 
                     break;
@@ -289,3 +255,89 @@ void parseFileContents(File file)
     }
 }
 
+int get_data_at_line(uint8_t linenumber,const char *dir,const char *filename){
+    //init_SD();
+    root = SD.open(dir);
+int p = 0;
+    if(root){
+        printPgmString("ok root");
+        File entry =  root.openNextFile();
+        printPgmString(entry.name());
+        printPgmString("  \n");
+        p =get_position_line(1,entry);
+        parseFileContents(p,entry);
+        printPgmString("  ");
+          p =get_position_line(2,entry);
+        parseFileContents(p,entry);
+        printPgmString("  ");
+          p =get_position_line(3,entry);
+        parseFileContents(p,entry);
+        printPgmString("  ");
+        entry.close();
+        }
+    else{
+        printPgmString("false root");
+    }
+
+     root.rewindDirectory();
+ 
+  root.close();
+
+    
+return 0;
+
+}
+
+void file_parser(char *line, uint8_t length){
+   switch (line[0])
+    {
+    case 'P':
+     
+        drawFromSD(&line[1], length - 1);
+        break;
+   
+
+    default: // bad command
+        Serial.print("? bad command: ");
+        Serial.println(line[0]);
+        break;
+    }
+ 
+}
+
+int get_position_line(int linenumber,File file){
+    int pos = 0;
+    int found = 0;
+    int line_counter = 1;
+
+    char c;
+    if (file)
+    {
+        file.seek(0);
+        while (file.available())
+        {
+            c = file.read();
+           
+            if (line_counter == linenumber){
+                found =1;
+                break;
+            }
+             else if(c =='\n'||c =='\r'){
+                line_counter++;
+                pos++;
+                }
+                
+            else{
+                pos++;
+                }
+        }
+    }
+    
+    
+    if(!found){
+        pos = 0;
+    }
+  
+    
+    return pos;
+}

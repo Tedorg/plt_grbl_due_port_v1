@@ -179,7 +179,15 @@ int protocol_main_loop()
         } else if (line[0] == '$') {
           // Grbl '$' system command
           report_status_message(system_execute_line(line));
-        } else if (sys.state & (STATE_ALARM | STATE_JOG)) {
+        } 
+        #ifdef PLT_V2
+          else if (line[0] ==  '|') {
+              file_parser(&line[1], char_counter);
+          }
+            // EEPROM diagnostic Viewer
+            
+        #endif
+       else if (sys.state & (STATE_ALARM | STATE_JOG)) {
           // Everything else is gcode. Block if in alarm or jog mode.
           report_status_message(STATUS_SYSTEM_GC_LOCK);
         } else {
@@ -681,7 +689,7 @@ static void protocol_exec_rt_suspend()
           #else
 					
             // Get current position and store restore location and spindle retract waypoint.
-            system_convert_array_steps_to_mpos(parking_target,sys_position);
+            system_convert_array_steps_to_mpos(parking_target,sys.position);
             if (bit_isfalse(sys.suspend,SUSPEND_RESTART_RETRACT)) {
               memcpy(restore_target,parking_target,sizeof(parking_target));
               retract_waypoint += restore_target[PARKING_AXIS];
