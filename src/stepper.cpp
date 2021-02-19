@@ -27,6 +27,7 @@
 #ifdef PLT_V2
 #include "MaslowDue.h"
 #include "DueTimer.h"
+#include <TMCStepper.h>
 
 void ST_RESET_TIMER_handler(void); // used as the GRBL TMR0 replacement
 void ST_MAIN_TIMER_handler(void); // used as the GRBL TMR1 replacement
@@ -66,6 +67,14 @@ void ST_MAIN_TIMER_handler(void); // used as the GRBL TMR1 replacement
 // NOTE: This data is copied from the prepped planner blocks so that the planner blocks may be
 // discarded when entirely consumed and completed by the segment buffer. Also, AMASS alters this
 // data for its own use.
+
+
+
+#define R_SENSE 0.11f // Match to your driver
+                      // SilentStepStick series use 0.11
+                      // UltiMachine Einsy and Archim2 boards use 0.2
+                      // Panucatt BSD2660 uses 0.1
+                      // Watterott TMC5160 uses 0.075
 
 typedef struct
 {
@@ -212,7 +221,7 @@ static st_prep_t prep;
 void motorsEnabled(void)
 {
   //Motors_Disabled = 0;
-
+  TMC2130Stepper driver(X_CS_PIN, R_SENSE);                           // Hardware SPI
   digitalWrite(X_ENABLE, 0); // disable the motor driver
   digitalWrite(Y_ENABLE, 0);
   digitalWrite(Z_ENABLE, 0);
@@ -832,6 +841,7 @@ void st_reset()
 void stepper_init()
 {
 #ifdef PLT_V2
+  
   motorsEnabled();
   //Plt v2 uses a due and tmc2130 drivers
   // for a test version we use soem generic drivers
