@@ -28,6 +28,18 @@
 #include "MaslowDue.h"
 #include "DueTimer.h"
 #include <TMCStepper.h>
+#define R_SENSE 0.11f // Match to your driver
+                      // SilentStepStick series use 0.11
+                      // UltiMachine Einsy and Archim2 boards use 0.2
+                      // Panucatt BSD2660 uses 0.1
+                      // Watterott TMC5160 uses 0.075
+
+// Select your stepper driver type
+//TMC2130Stepper driver(CS_PIN, R_SENSE);                           // Hardware SPI
+
+TMC2130Stepper driver_x = TMC2130Stepper(X_ENABLE, X_DIRECTION, X_STEP,X_CS);
+TMC2130Stepper driver_y = TMC2130Stepper(Y_ENABLE, Y_DIRECTION, Y_STEP, Y_CS);
+
 
 void ST_RESET_TIMER_handler(void); // used as the GRBL TMR0 replacement
 void ST_MAIN_TIMER_handler(void); // used as the GRBL TMR1 replacement
@@ -177,6 +189,9 @@ typedef struct
 } st_prep_t;
 static st_prep_t prep;
 
+
+
+
 /*    BLOCK VELOCITY PROFILE DEFINITION
           __________________________
          /|                        |\     _________________         ^
@@ -221,7 +236,7 @@ static st_prep_t prep;
 void motorsEnabled(void)
 {
   //Motors_Disabled = 0;
-  TMC2130Stepper driver(X_CS_PIN, R_SENSE);                           // Hardware SPI
+  //TMC2130Stepper driver(X_CS_PIN, R_SENSE);                           // Hardware SPI
   digitalWrite(X_ENABLE, 0); // disable the motor driver
   digitalWrite(Y_ENABLE, 0);
   digitalWrite(Z_ENABLE, 0);
@@ -236,6 +251,82 @@ void motorsDisabled(void)
   digitalWrite(Z_ENABLE, 1);
 
   //  DEBUG_COM_PORT.print("MOTORS ON\n");
+}
+
+void stepper_init()
+{
+pinMode(X_STEP, OUTPUT);
+  pinMode(X_ENABLE, OUTPUT);
+  pinMode(X_DIRECTION, OUTPUT);
+  //pinMode(Encoder_XA, INPUT_PULLUP);
+  // pinMode(Encoder_XB, INPUT_PULLUP);
+
+  pinMode(Y_STEP, OUTPUT);
+  pinMode(Y_ENABLE, OUTPUT);
+  pinMode(Y_DIRECTION, OUTPUT);
+  // pinMode(Encoder_YA, INPUT_PULLUP);
+  // pinMode(Encoder_YB, INPUT_PULLUP);
+
+  pinMode(Z_STEP, OUTPUT);
+  pinMode(Z_ENABLE, OUTPUT);
+  pinMode(Z_DIRECTION, OUTPUT);
+
+
+
+#ifdef PLT_V2
+  // pinMode(X_CS, OUTPUT);
+  // pinMode(Y_CS, OUTPUT);
+  
+  // init SPI X
+
+  //SPI.begin();
+  //igitalWrite(X_CS, HIGH);
+  driver_x.begin();
+  
+   
+
+                                  // UART: Init SW UART (if selected) with default 115200 baudrate
+  //driver_x.toff(5);                 // Enables driver in software
+  driver_x.rms_current(600);        // Set motor RMS current
+  driver_x.microsteps(16);          // Set microsteps to 1/16th
+
+  driver_x.en_pwm_mode(true);       // Toggle stealthChop on TMC2130/2160/5130/5160
+  //driver.en_spreadCycle(false);   // Toggle spreadCycle on TMC2208/2209/2224
+  driver_x.pwm_autoscale(true);     // Needed for stealthChop
+  Serial.print("X DRV_STATUS: 0b");
+  Serial.println(driver_x.DRV_STATUS(), BIN);
+  //digitalWrite(X_CS, LOW);
+
+  // init SPI Y
+  //digitalWrite(Y_CS, HIGH);
+
+ 
+  driver_y.begin();                 //  SPI: Init CS pins and possible SW SPI pins
+                                  // UART: Init SW UART (if selected) with default 115200 baudrate
+  //driver_y.toff(5);                 // Enables driver in software
+  driver_y.rms_current(600);        // Set motor RMS current
+  driver_y.microsteps(16);          // Set microsteps to 1/16th
+
+  driver_y.en_pwm_mode(true);       // Toggle stealthChop on TMC2130/2160/5130/5160
+  //driver.en_spreadCycle(false);   // Toggle spreadCycle on TMC2208/2209/2224
+  driver_y.pwm_autoscale(true);     // Needed for stealthChop
+  Serial.print("Y DRV_STATUS: 0b");
+  Serial.println(driver_y.DRV_STATUS(), BIN);
+  // digitalWrite(Y_CS, LOW);
+
+  // digitalWrite(X_ENABLE, LOW);
+  // digitalWrite(Y_ENABLE, LOW);
+ // SPI.end();
+
+
+
+
+  motorsEnabled();
+  //Plt v2 uses a due and tmc2130 drivers
+  // for a test version we use soem generic drivers
+
+
+#endif
 }
 
 
@@ -838,54 +929,7 @@ void st_reset()
 }
 
 // Initialize and start the stepper motor subsystem
-void stepper_init()
-{
-#ifdef PLT_V2
-  
-  motorsEnabled();
-  //Plt v2 uses a due and tmc2130 drivers
-  // for a test version we use soem generic drivers
 
-
-
-#else
-
-#ifdef DEFAULTS_RAMPS_BOARD
-  STEP_DDR(0) |= 1 << STEP_BIT(0);
-  STEP_DDR(1) |= 1 << STEP_BIT(1);
-  STEP_DDR(2) |= 1 << STEP_BIT(2);
-
-  STEPPER_DISABLE_DDR(0) |= 1 << STEPPER_DISABLE_BIT(0);
-  STEPPER_DISABLE_DDR(1) |= 1 << STEPPER_DISABLE_BIT(1);
-  STEPPER_DISABLE_DDR(2) |= 1 << STEPPER_DISABLE_BIT(2);
-
-  DIRECTION_DDR(0) |= 1 << DIRECTION_BIT(0);
-  DIRECTION_DDR(1) |= 1 << DIRECTION_BIT(1);
-  DIRECTION_DDR(2) |= 1 << DIRECTION_BIT(2);
-#else
-  STEP_DDR |= STEP_MASK;
-  STEPPERS_DISABLE_DDR |= 1 << STEPPERS_DISABLE_BIT;
-  DIRECTION_DDR |= DIRECTION_MASK;
-#endif // Ramps Board
-
-  // Configure Timer 1: Stepper Driver Interrupt
-  TCCR1B &= ~(1 << WGM13); // waveform generation = 0100 = CTC
-  TCCR1B |= (1 << WGM12);
-  TCCR1A &= ~((1 << WGM11) | (1 << WGM10));
-  TCCR1A &= ~((1 << COM1A1) | (1 << COM1A0) | (1 << COM1B1) | (1 << COM1B0)); // Disconnect OC1 output
-  // TCCR1B = (TCCR1B & ~((1<<CS12) | (1<<CS11))) | (1<<CS10); // Set in st_go_idle().
-  // TIMSK1 &= ~(1<<OCIE1A);  // Set in st_go_idle().
-
-  // Configure Timer 0: Stepper Port Reset Interrupt
-  TIMSK0 &= ~((1 << OCIE0B) | (1 << OCIE0A) | (1 << TOIE0)); // Disconnect OC0 outputs and OVF interrupt.
-  TCCR0A = 0;                                                // Normal operation
-  TCCR0B = 0;                                                // Disable Timer0 until needed
-  TIMSK0 |= (1 << TOIE0);                                    // Enable Timer0 overflow interrupt
-#ifdef STEP_PULSE_DELAY
-  TIMSK0 |= (1 << OCIE0A);                                   // Enable Timer0 Compare Match A interrupt
-#endif
-#endif
-}
 
 // Called by planner_recalculate() when the executing block is updated by the new plan.
 void st_update_plan_block_parameters()

@@ -7,64 +7,54 @@
 #define bufferLength 64          // serial buffer length
 
 File root;
+Sd2Card card;
+
+
 
 //----------------------------------------------------------------------
 void init_SD()
 {
-    pinMode(CSPIN, OUTPUT);
-    if (!SD.begin(CSPIN))
-    {
-        Serial.println(" SD initialization failed!");
-        return;
-    }
+    pinMode(SD_CS_PIN, OUTPUT);
+    delay_us(1000);
+    if (!SD.begin(SD_CS_PIN)) {
+    Serial.println("initialization failed!");
+    return;
+  }
+  Serial.println("initialization done.");
 }
 
 //----------------------------------------------------------------------
 
 void getFileList()
 { //Serial.print out all the .txt files on the SD card
-    init_SD();
-    root = SD.open("/data");
-    Serial.print(" SD root: ");
-    Serial.println(root);
-    root.rewindDirectory();
+    root = SD.open("/");
 
-    Serial.println("Files:");
-    while (true)
-    {
-        File entry = root.openNextFile();
+  printDirectory(root, 0);
 
-        if (!entry)
-        {
-
-            break;
-        }
-        if (!entry.isDirectory())
-        {
-            // do some more checking
-            char *filename = entry.name();
-
-            if (filename[0] == '~' || filename[0] == '.' || filename[0] == '_')
-            {
-                entry.close();
-                continue;
-            }
-            if (hasExtension(entry, ".txt"))
-            {
-                entry.close();
-                continue;
-            }
-            // if we are here, we have a good file, so Serial.print it
-            Serial.print("filename:  ");
-            Serial.println(entry.name());
-            delayMicroseconds(5);
-        }
-        entry.close();
-    }
-    if (root)
-    {
-        root.close();
-    }
+  Serial.println("done!");
+}
+void printDirectory(File dir, int numTabs) {
+   while(true) {
+     
+     File entry =  dir.openNextFile();
+     if (! entry) {
+       // no more files
+       break;
+     }
+     for (uint8_t i=0; i<numTabs; i++) {
+       Serial.print('\t');
+     }
+     Serial.print(entry.name());
+     if (entry.isDirectory()) {
+       Serial.println("/");
+       printDirectory(entry, numTabs+1);
+     } else {
+       // files have sizes, directories do not
+       Serial.print("\t\t");
+       Serial.println(entry.size(), DEC);
+     }
+     entry.close();
+   }
 }
 
 //----------------------------------------------------------------------

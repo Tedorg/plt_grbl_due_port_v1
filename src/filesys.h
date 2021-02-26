@@ -15,6 +15,7 @@
 
 void init_SD();
 void getFileList();
+void printDirectory(File dir, int numTabs);
 void deleteFile(char *filename, int length);
 unsigned int getFilesize(char *filename, int length);
 bool hasExtension(File file, char *ext);

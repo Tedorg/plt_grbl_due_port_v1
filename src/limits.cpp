@@ -260,8 +260,27 @@ void limits_go_home(uint8_t cycle_mask)
 {
   if (sys.abort) { return; } // Block if system reset has been issued.
 
+  uint8_t n_cycle = (2*N_HOMING_LOCATE_CYCLE+1);
+  uint8_t step_pin[N_AXIS];
+  float target[N_AXIS];
+  float max_travel = 0.0;
   uint8_t idx;
 
+
+  for (idx=0; idx<N_AXIS; idx++) {  
+    // Initialize step pin masks
+    step_pin[idx] = get_step_pin_mask(idx);
+    #ifdef COREXY    
+      if ((idx==A_MOTOR)||(idx==B_MOTOR)) { step_pin[idx] = (get_step_pin_mask(X_AXIS)|get_step_pin_mask(Y_AXIS)); } 
+    #endif
+
+    if (bit_istrue(cycle_mask,bit(idx))) { 
+      // Set target based on max_travel setting. Ensure homing switches engaged with search scalar.
+      // NOTE: settings.max_travel[] is stored as a negative value.
+      max_travel = max(max_travel,(-HOMING_AXIS_SEARCH_SCALAR)*settings.max_travel[idx]);
+    }
+  }
+  //Serial.println(max_travel);
   // The active cycle axes should now be homed and machine limits have been located. By
   // default, Grbl defines machine space as all negative, as do most CNCs. Since limit switches
   // can be on either side of an axes, check and set axes machine zero appropriately. Also,
@@ -276,6 +295,8 @@ void limits_go_home(uint8_t cycle_mask)
      
       #ifdef PLT_V2
         if (idx==X_AXIS) {
+
+          
           //int32_t off_axis_position = system_convert_corexy_to_y_axis_steps(sys.position);
           sys.position[A_MOTOR] = set_axis_position + off_axis_position;
           sys.position[B_MOTOR] = set_axis_position - off_axis_position;
@@ -288,6 +309,7 @@ void limits_go_home(uint8_t cycle_mask)
         }
    
 #endif
+//Serial.println(sys.position[idx]);
     }
   
   sys.step_control = STEP_CONTROL_NORMAL_OP; // Return step control to normal operation.

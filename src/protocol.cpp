@@ -80,8 +80,8 @@ static void protocol_exec_rt_suspend();
       //coolant_init();
       limits_init();
       //probe_init();
-      init_SD();
-      getFileList();
+      //
+      
       sleep_init();
       plan_reset(); // Clear block buffer and planner variables
       st_reset(); // Clear stepper subsystem variables.
@@ -98,6 +98,8 @@ static void protocol_exec_rt_suspend();
 
       // Print welcome message. Indicates an initialization has occured at power-up or with a reset.
       report_init_message();
+      init_SD();
+      getFileList();
 
       // Start Grbl main loop. Processes program inputs and executes them.
       // in Arduino return to Loop() which calls --> protocol_main_loop();

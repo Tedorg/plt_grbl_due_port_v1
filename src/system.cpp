@@ -23,16 +23,13 @@
 
 void system_init()
 {
-  #ifndef PLT_V2
-    CONTROL_DDR &= ~(CONTROL_MASK); // Configure as input pins
-    #ifdef DISABLE_CONTROL_PIN_PULL_UP
-      CONTROL_PORT &= ~(CONTROL_MASK); // Normal low operation. Requires external pull-down.
-    #else
-      CONTROL_PORT |= CONTROL_MASK;   // Enable internal pull-up resistors. Normal high operation.
-    #endif
-    CONTROL_PCMSK |= CONTROL_MASK;  // Enable specific pins of the Pin Change Interrupt
-    PCICR |= (1 << CONTROL_INT);   // Enable Pin Change Interrupt
-  #endif
+  initEncoder();
+ 
+  serial_init(); // Setup serial baud rate and interrupts for machine port
+
+  settings_init(); // Load Grbl settings from EEPROM
+
+  stepper_init(); // Configure stepper pins and interrupt timers
 }
 
 

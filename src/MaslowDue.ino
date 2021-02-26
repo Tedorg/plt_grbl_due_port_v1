@@ -184,21 +184,7 @@ void setup()
   pinMode(HeartBeatLED, OUTPUT);
   digitalWrite(HeartBeatLED, LOW);
 
-  pinMode(X_STEP, OUTPUT);
-  pinMode(X_ENABLE, OUTPUT);
-  pinMode(X_DIRECTION, OUTPUT);
-  //pinMode(Encoder_XA, INPUT_PULLUP);
-  // pinMode(Encoder_XB, INPUT_PULLUP);
-
-  pinMode(Y_STEP, OUTPUT);
-  pinMode(Y_ENABLE, OUTPUT);
-  pinMode(Y_DIRECTION, OUTPUT);
-  // pinMode(Encoder_YA, INPUT_PULLUP);
-  // pinMode(Encoder_YB, INPUT_PULLUP);
-
-  pinMode(Z_STEP, OUTPUT);
-  pinMode(Z_ENABLE, OUTPUT);
-  pinMode(Z_DIRECTION, OUTPUT);
+  
   // pinMode(Encoder_ZA, INPUT_PULLUP);
   // pinMode(Encoder_ZB, INPUT_PULLUP);
 
@@ -218,15 +204,9 @@ void setup()
   // attachInterrupt(digitalPinToInterrupt(Encoder_ZA), update_Encoder_ZA, CHANGE);
   // attachInterrupt(digitalPinToInterrupt(Encoder_ZB), update_Encoder_ZB, CHANGE);
 //spindle_init();
- initEncoder();
- 
-  serial_init(); // Setup serial baud rate and interrupts for machine port
 
-  settings_init(); // Load Grbl settings from EEPROM
-
-  stepper_init(); // Configure stepper pins and interrupt timers
   system_init();  // Configure pinout pins and pin-change interrupt
- reset_real_position();
+  reset_real_position();
   //sd_setup();
   //extern system_t sys;
   memset(&sys, 0, sizeof(system_t));                       // Clear all system variables
