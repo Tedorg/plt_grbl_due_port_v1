@@ -30,7 +30,7 @@
 void motorsEnabled(void);
 void motorsDisabled(void);
 
-
+void stepper_status();
 // Initialize and setup the stepper motor subsystem
 void stepper_init();
 

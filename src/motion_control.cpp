@@ -390,6 +390,7 @@ void mc_homing_cycle(uint8_t cycle_mask)
   // Sync gcode parser and planner positions to homed position.
   gc_sync_position();
   plan_sync_position();
+  enc_sync_position();
 
   // If hard limits feature enabled, re-enable hard limits pin change register after homing cycle.
   limits_init();

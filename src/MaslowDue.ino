@@ -206,7 +206,8 @@ void setup()
 //spindle_init();
 
   system_init();  // Configure pinout pins and pin-change interrupt
-  reset_real_position();
+  
+  enc_sync_position();
   //sd_setup();
   //extern system_t sys;
   memset(&sys, 0, sizeof(system_t));                       // Clear all system variables

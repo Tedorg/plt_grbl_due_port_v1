@@ -278,6 +278,7 @@ void limits_go_home(uint8_t cycle_mask)
       // Set target based on max_travel setting. Ensure homing switches engaged with search scalar.
       // NOTE: settings.max_travel[] is stored as a negative value.
       max_travel = max(max_travel,(-HOMING_AXIS_SEARCH_SCALAR)*settings.max_travel[idx]);
+      
     }
   }
   //Serial.println(max_travel);
@@ -307,7 +308,7 @@ void limits_go_home(uint8_t cycle_mask)
         } else {
           sys.position[idx] = set_axis_position;
         }
-   
+   //probe_get_state()
 #endif
 //Serial.println(sys.position[idx]);
     }

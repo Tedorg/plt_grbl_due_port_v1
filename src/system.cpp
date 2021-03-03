@@ -23,13 +23,14 @@
 
 void system_init()
 {
-  initEncoder();
+  
  
   serial_init(); // Setup serial baud rate and interrupts for machine port
 
   settings_init(); // Load Grbl settings from EEPROM
 
   stepper_init(); // Configure stepper pins and interrupt timers
+  initEncoder();
 }
 
 

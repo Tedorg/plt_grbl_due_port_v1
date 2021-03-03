@@ -1,25 +1,23 @@
 
 #include "grbl.h"
 #include "DueTimer.h"
-void sync_position(void);
-int32_t sys_real_position[N_AXIS];      // Real-time machine (aka home) Encoder  Position
+void read_enc_position(void);
+int32_t sys_real_position[N_AXIS]; // Real-time machine (aka home) Encoder  Position
 //Arduino due Quad Decoder init
-const int quadY_A = 2;  //TIOA0
-const int quadY_B = 13; //TIOB0
+const int quadY_A = Encoder_XA; //TIOA0
+const int quadY_B = Encoder_XB; //TIOB0
 const unsigned int mask_quadY_A = digitalPinToBitMask(quadY_A);
 const unsigned int mask_quadY_B = digitalPinToBitMask(quadY_B);
 
-const int quadX_A = 5; //TIOA6
-const int quadX_B = 4; //TIOB6
+const int quadX_A = Encoder_YB; //TIOA6
+const int quadX_B = Encoder_YA; //TIOB6
 const unsigned int mask_quadX_A = digitalPinToBitMask(quadX_A);
 const unsigned int mask_quadX_B = digitalPinToBitMask(quadX_B);
 
-const int quadZ_A = 11; //TIOA8
-const int quadZ_B = 10; //TIOB7
+const int quadZ_A = Encoder_ZA; //TIOA8
+const int quadZ_B = Encoder_ZB; //TIOB7
 const unsigned int mask_quadZ_A = digitalPinToBitMask(quadZ_A);
 const unsigned int mask_quadZ_B = digitalPinToBitMask(quadZ_B);
-
-
 
 void activateCNT_TC0() // X Axis
 {
@@ -31,7 +29,9 @@ void activateCNT_TC0() // X Axis
   REG_TC0_BMR = (1 << 9) | (1 << 8) | (1 << 12) | (60 << 20);
   // enable the clock (CLKEN=1) and reset the counter (SWTRG=1)
   // SWTRG = 1 necessary to start the clock!!
-  REG_TC0_CCR0 = 5;
+   // enable the clock (CLKEN=1) and reset the counter (SWTRG=1)
+    REG_TC0_CCR0 = 5;
+    REG_TC0_CCR1 = 5;
   REG_TC0_IER1 = 0b10000000; // enable overflow interrupt TC0
   REG_TC0_IDR1 = 0b01111111; // disable other interrupts TC0
   NVIC_EnableIRQ(TC0_IRQn);  // enable TC0 interrupts
@@ -47,8 +47,9 @@ void activateCNT_TC2() // Y Axis
   REG_TC2_BMR = (1 << 9) | (1 << 8) | (1 << 12) | (1 << 13);
   // enable the clock (CLKEN=1) and reset the counter (SWTRG=1)
   // SWTRG = 1 necessary to start the clock!!
-  REG_TC2_CCR0 = 5;
-  REG_TC2_IER1 = 0b10000000; // enable overflow interrupt TC2
+    REG_TC2_CCR0 = 5;
+    REG_TC2_CCR1 = 5;
+    REG_TC2_IER1 = 0b10000000; // enable overflow interrupt TC2
   REG_TC2_IDR1 = 0b01111111; // disable other interrupts TC2
   NVIC_EnableIRQ(TC2_IRQn);  // enable TC2 interrupts
 }
@@ -85,33 +86,37 @@ void initEncoder(void)
 
   // activate clock for TC2
   activateCNT_TC2();
- ST_SYNCH_TIMER.attachInterrupt(sync_position).setPeriod(1100).start();
-
+  ST_SYNCH_TIMER.attachInterrupt(read_enc_position).setPeriod(1100).start();
 }
 
-void reset_real_position(){
-    REG_TC2_CCR0 = 5;
-     REG_TC0_CCR0 = 5;
-    for (int i = 0; i < N_AXIS; i++){
-        sys_real_position[i]=0;
-    }
+void enc_sync_position()
+{
+  initEncoder();
+  Serial.print("encA: ");
+  Serial.println(REG_TC0_CV0,DEC);
+  Serial.print("encB: ");
+  Serial.println(REG_TC2_CV0,DEC);
+
+  for (int i = 0; i < N_AXIS; i++)
+  {
+    sys_real_position[i] = sys.position[i];
+  }
 }
 
-void sync_position(void){
+void read_enc_position(void)
+{
 
-sys_real_position[X_AXIS] = REG_TC0_CV0; // Todo -1 quick fix just for now
-sys_real_position[Y_AXIS] = REG_TC2_CV0;      // Value of Encoder 2
-long dummy = REG_TC0_SR0;                                            // vital - reading this clears the interrupt flag
-//   //int pos_Z = REG_TC2_CV0;  // Value of Encoder 3
+  sys_real_position[X_AXIS] = REG_TC0_CV0; // Todo -1 quick fix just for now
+  sys_real_position[Y_AXIS] = REG_TC2_CV0; // Value of Encoder 2
+  long dummy = REG_TC0_SR0;                // vital - reading this clears the interrupt flag
+  //   //int pos_Z = REG_TC2_CV0;  // Value of Encoder 3
 }
 
-
-
-static uint32_t error(int32_t ist, int32_t soll){
+static uint32_t error(int32_t ist, int32_t soll)
+{
   static float ratio = 1.25; //settings.steps_per_mm/settings.enc_steps_per_mm;
-  float float_error = (float)(ist*ratio) - soll;
+  float float_error = (float)(ist * ratio) - soll;
   int error = floor(float_error);
-  
 
   return error;
 }

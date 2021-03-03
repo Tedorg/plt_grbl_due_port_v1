@@ -28,21 +28,21 @@
 #include "MaslowDue.h"
 #include "DueTimer.h"
 #include <TMCStepper.h>
-#define R_SENSE 0.11f // Match to your driver
-                      // SilentStepStick series use 0.11
-                      // UltiMachine Einsy and Archim2 boards use 0.2
-                      // Panucatt BSD2660 uses 0.1
-                      // Watterott TMC5160 uses 0.075
 
+#define R_SENSE 0.11f // Match to your driver                         \
+                      // SilentStepStick series use 0.11              \
+                      // UltiMachine Einsy and Archim2 boards use 0.2 \
+                      // Panucatt BSD2660 uses 0.1                    \
+                      // Watterott TMC5160 uses 0.075
+bool vsense;
+using namespace TMC2130_n;
 // Select your stepper driver type
 //TMC2130Stepper driver(CS_PIN, R_SENSE);                           // Hardware SPI
-
-TMC2130Stepper driver_x = TMC2130Stepper(X_ENABLE, X_DIRECTION, X_STEP,X_CS);
-TMC2130Stepper driver_y = TMC2130Stepper(Y_ENABLE, Y_DIRECTION, Y_STEP, Y_CS);
-
+TMC2130Stepper driver_x = TMC2130Stepper(X_CS, R_SENSE); // Hardware SPI
+TMC2130Stepper driver_y = TMC2130Stepper(Y_CS, R_SENSE);
 
 void ST_RESET_TIMER_handler(void); // used as the GRBL TMR0 replacement
-void ST_MAIN_TIMER_handler(void); // used as the GRBL TMR1 replacement
+void ST_MAIN_TIMER_handler(void);  // used as the GRBL TMR1 replacement
 #endif
 
 // Some useful constants.
@@ -79,14 +79,6 @@ void ST_MAIN_TIMER_handler(void); // used as the GRBL TMR1 replacement
 // NOTE: This data is copied from the prepped planner blocks so that the planner blocks may be
 // discarded when entirely consumed and completed by the segment buffer. Also, AMASS alters this
 // data for its own use.
-
-
-
-#define R_SENSE 0.11f // Match to your driver
-                      // SilentStepStick series use 0.11
-                      // UltiMachine Einsy and Archim2 boards use 0.2
-                      // Panucatt BSD2660 uses 0.1
-                      // Watterott TMC5160 uses 0.075
 
 typedef struct
 {
@@ -189,9 +181,6 @@ typedef struct
 } st_prep_t;
 static st_prep_t prep;
 
-
-
-
 /*    BLOCK VELOCITY PROFILE DEFINITION
           __________________________
          /|                        |\     _________________         ^
@@ -244,7 +233,7 @@ void motorsEnabled(void)
 
 void motorsDisabled(void)
 {
- // Motors_Disabled = 1;
+  // Motors_Disabled = 1;
 
   digitalWrite(X_ENABLE, 1); // Enable the motor driver
   digitalWrite(Y_ENABLE, 1);
@@ -252,10 +241,37 @@ void motorsDisabled(void)
 
   //  DEBUG_COM_PORT.print("MOTORS ON\n");
 }
+void stepper_status()
+{
+  driver_x.begin();
+  DRV_STATUS_t drv_status{0};
+  drv_status.sr = driver_x.DRV_STATUS();
 
+  Serial.print("0 ");
+  Serial.print(drv_status.sg_result, DEC);
+  Serial.print(" ");
+  Serial.println(driver_x.cs2rms(drv_status.cs_actual), DEC);
+  Serial.print("X LOST_STEPS: 0b");
+  Serial.println(driver_x.LOST_STEPS(), DEC);
+
+  driver_y.begin();
+  drv_status.sr = driver_y.DRV_STATUS();
+
+  Serial.print("0 ");
+  Serial.print(drv_status.sg_result, DEC);
+  Serial.print(" ");
+  Serial.println(driver_y.cs2rms(drv_status.cs_actual), DEC);
+  Serial.print("Y LOST_STEPS: 0b");
+  Serial.println(driver_y.LOST_STEPS(), DEC);
+}
+uint16_t rms_current(uint8_t CS, float Rsense = 0.11)
+{
+  return (float)(CS + 1) / 32.0 * (vsense ? 0.180 : 0.325) / (Rsense + 0.02) / 1.41421 * 1000;
+}
 void stepper_init()
 {
-pinMode(X_STEP, OUTPUT);
+
+  pinMode(X_STEP, OUTPUT);
   pinMode(X_ENABLE, OUTPUT);
   pinMode(X_DIRECTION, OUTPUT);
   //pinMode(Encoder_XA, INPUT_PULLUP);
@@ -264,71 +280,67 @@ pinMode(X_STEP, OUTPUT);
   pinMode(Y_STEP, OUTPUT);
   pinMode(Y_ENABLE, OUTPUT);
   pinMode(Y_DIRECTION, OUTPUT);
-  // pinMode(Encoder_YA, INPUT_PULLUP);
-  // pinMode(Encoder_YB, INPUT_PULLUP);
+  pinMode(Encoder_YA, INPUT_PULLUP);
+  pinMode(Encoder_YB, INPUT_PULLUP);
 
   pinMode(Z_STEP, OUTPUT);
   pinMode(Z_ENABLE, OUTPUT);
   pinMode(Z_DIRECTION, OUTPUT);
 
-
-
 #ifdef PLT_V2
-  // pinMode(X_CS, OUTPUT);
-  // pinMode(Y_CS, OUTPUT);
-  
-  // init SPI X
-
-  //SPI.begin();
-  //igitalWrite(X_CS, HIGH);
+  SPI.begin();
+  //digitalWrite(X_CS, HIGH);
   driver_x.begin();
-  
-   
+  driver_x.toff(3);
+  driver_x.blank_time(24);
+  driver_x.rms_current(400); // mA
+  driver_x.microsteps(16);
+  driver_x.TCOOLTHRS(0xFFFFF); // 20bit max
+  driver_x.THIGH(0);
+  driver_x.semin(5);
+  driver_x.semax(2);
+  driver_x.sedn(0b01);
 
-                                  // UART: Init SW UART (if selected) with default 115200 baudrate
-  //driver_x.toff(5);                 // Enables driver in software
-  driver_x.rms_current(600);        // Set motor RMS current
-  driver_x.microsteps(16);          // Set microsteps to 1/16th
+  //digitalWrite(X_ENABLE, LOW); 	// Enable driver in hardware
 
-  driver_x.en_pwm_mode(true);       // Toggle stealthChop on TMC2130/2160/5130/5160
-  //driver.en_spreadCycle(false);   // Toggle spreadCycle on TMC2208/2209/2224
-  driver_x.pwm_autoscale(true);     // Needed for stealthChop
-  Serial.print("X DRV_STATUS: 0b");
-  Serial.println(driver_x.DRV_STATUS(), BIN);
-  //digitalWrite(X_CS, LOW);
+  // SPI.end();
+  //driver_y.begin();                 //  SPI: Init CS pins and possible SW SPI pins
+  // UART: Init SW UART (if selected) with default 115200 baudrate
+  // //driver_y.toff(5);                 // Enables driver in software
+  // driver_y.rms_current(600);        // Set motor RMS current
+  // driver_y.microsteps(16);          // Set microsteps to 1/16th
 
-  // init SPI Y
-  //digitalWrite(Y_CS, HIGH);
-
- 
-  driver_y.begin();                 //  SPI: Init CS pins and possible SW SPI pins
-                                  // UART: Init SW UART (if selected) with default 115200 baudrate
-  //driver_y.toff(5);                 // Enables driver in software
-  driver_y.rms_current(600);        // Set motor RMS current
-  driver_y.microsteps(16);          // Set microsteps to 1/16th
-
-  driver_y.en_pwm_mode(true);       // Toggle stealthChop on TMC2130/2160/5130/5160
-  //driver.en_spreadCycle(false);   // Toggle spreadCycle on TMC2208/2209/2224
-  driver_y.pwm_autoscale(true);     // Needed for stealthChop
-  Serial.print("Y DRV_STATUS: 0b");
-  Serial.println(driver_y.DRV_STATUS(), BIN);
-  // digitalWrite(Y_CS, LOW);
-
-  // digitalWrite(X_ENABLE, LOW);
+  // driver_y.stealthChop(1);       // Toggle stealthChop on TMC2130/2160/5130/5160
+  // //driver.en_spreadCycle(false);   // Toggle spreadCycle on TMC2208/2209/2224
   // digitalWrite(Y_ENABLE, LOW);
- // SPI.end();
 
+  // Serial.print("Y DRV_STATUS: 0b");
+  // Serial.println(driver_y.DRV_STATUS(), BIN);
+  // // digitalWrite(Y_CS, LOW);
 
+  // // digitalWrite(X_ENABLE, LOW);
+  // // digitalWrite(Y_ENABLE, LOW);
+  driver_y.begin();
+  driver_y.toff(3);
+  driver_y.blank_time(24);
+  driver_y.rms_current(800); // mA
+  driver_y.microsteps(16);
+  driver_y.TCOOLTHRS(0xFFFFF); // 20bit max
+  driver_y.THIGH(0);
+  driver_y.semin(5);
+  driver_y.semax(2);
+  driver_y.sedn(0b01);
 
+  //	digitalWrite(Y_ENABLE, LOW); 	// Enable driver in hardware
+
+  SPI.end();
 
   motorsEnabled();
   //Plt v2 uses a due and tmc2130 drivers
   // for a test version we use soem generic drivers
 
-
 #endif
 }
-
 
 void st_wake_up()
 {
@@ -369,6 +381,7 @@ void stepperTimeoutHandler(void)
     pin_state = !pin_state;
   }                 // Apply pin invert.
   pin_state = true; // Override. Disable steppers.
+                    //motorsDisabled();
 }
 
 // Stepper shutdown
@@ -481,7 +494,7 @@ void ST_MAIN_TIMER_handler(void)
   if (busy)
   {
     return;
-    printf("s");
+
   } // The busy-flag is used to avoid reentering this interrupt
 
 #ifndef PLT_V2
@@ -543,7 +556,7 @@ void ST_MAIN_TIMER_handler(void)
 
 #endif
 
-  // //'Left Motor' 
+  // //'Left Motor'
   // if ((st.step_outbits & (1 << X_STEP_BIT)) && (st.dir_outbits & (1 << X_DIRECTION_BIT)) == 0)
   //     x_axis.target++;
   // else if ((st.step_outbits & (1 << X_STEP_BIT)) && (st.dir_outbits & (1 << X_DIRECTION_BIT)))
@@ -929,7 +942,6 @@ void st_reset()
 }
 
 // Initialize and start the stepper motor subsystem
-
 
 // Called by planner_recalculate() when the executing block is updated by the new plan.
 void st_update_plan_block_parameters()

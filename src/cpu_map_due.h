@@ -82,7 +82,7 @@ DUE
   #define Z_STEP  34      // 34	PC2	Digital Pin 34
   #define Z_DIRECTION 36   //36	PC4	Digital Pin 36
   #define Z_CS  50// 24	PA15	Digital Pin 24
-  #define Z_LIMIT_PIN 51  // 24	PA15	Digital Pin 24
+  #define Z_LIMIT_PIN 64  // 24	PA15	Digital Pin 24
    
  
 #endif

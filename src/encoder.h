@@ -4,7 +4,8 @@
 
 
 void initEncoder(void);
-void reset_real_position(void);
+
+void enc_sync_position(void);
 
 
 #endif
