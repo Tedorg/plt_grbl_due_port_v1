@@ -31,7 +31,7 @@ uint8_t probe_invert_mask;
 void probe_init()
 {
   #ifdef PLT_V2
- pinMode(ZZ_LIMIT_PIN, INPUT);
+ pinMode(Z_LIMIT_PIN, INPUT);
   #else
     PROBE_DDR &= ~(PROBE_MASK); // Configure as input pins
     #ifdef DISABLE_PROBE_PIN_PULL_UP

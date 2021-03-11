@@ -29,12 +29,12 @@ void activateCNT_TC0() // X Axis
   REG_TC0_BMR = (1 << 9) | (1 << 8) | (1 << 12) | (60 << 20);
   // enable the clock (CLKEN=1) and reset the counter (SWTRG=1)
   // SWTRG = 1 necessary to start the clock!!
-   // enable the clock (CLKEN=1) and reset the counter (SWTRG=1)
-    REG_TC0_CCR0 = 5;
-    REG_TC0_CCR1 = 5;
-  REG_TC0_IER1 = 0b10000000; // enable overflow interrupt TC0
-  REG_TC0_IDR1 = 0b01111111; // disable other interrupts TC0
-  NVIC_EnableIRQ(TC0_IRQn);  // enable TC0 interrupts
+  // enable the clock (CLKEN=1) and reset the counter (SWTRG=1)
+   REG_TC0_CCR0 = 5;
+   REG_TC0_CCR1 = 5;
+  // REG_TC0_IER1 = 0b10000000; // enable overflow interrupt TC0
+  // REG_TC0_IDR1 = 0b01111111; // disable other interrupts TC0
+  NVIC_EnableIRQ(TC0_IRQn); // enable TC0 interrupts
 }
 
 void activateCNT_TC2() // Y Axis
@@ -44,14 +44,14 @@ void activateCNT_TC2() // Y Axis
   // select XC0 as clock source and set capture mode
   REG_TC2_CMR0 = 5;
   // activate quadrature encoder and position measure mode, no filters
-  REG_TC2_BMR = (1 << 9) | (1 << 8) | (1 << 12) | (1 << 13);
+  REG_TC2_BMR = (1 << 9) | (1 << 8) | (1 << 12) | (60 << 20);
   // enable the clock (CLKEN=1) and reset the counter (SWTRG=1)
   // SWTRG = 1 necessary to start the clock!!
-    REG_TC2_CCR0 = 5;
-    REG_TC2_CCR1 = 5;
-    REG_TC2_IER1 = 0b10000000; // enable overflow interrupt TC2
-  REG_TC2_IDR1 = 0b01111111; // disable other interrupts TC2
-  NVIC_EnableIRQ(TC2_IRQn);  // enable TC2 interrupts
+  REG_TC2_CCR0 = 5;
+  REG_TC2_CCR1 = 5;
+  //   REG_TC2_IER1 = 0b10000000; // enable overflow interrupt TC2
+  // REG_TC2_IDR1 = 0b01111111; // disable other interrupts TC2
+  NVIC_EnableIRQ(TC2_IRQn); // enable TC2 interrupts
 }
 void initEncoder(void)
 {
@@ -92,11 +92,12 @@ void initEncoder(void)
 void enc_sync_position()
 {
   initEncoder();
+#ifdef DEBUG2
   Serial.print("encA: ");
-  Serial.println(REG_TC0_CV0,DEC);
+  Serial.println(REG_TC0_CV0, DEC);
   Serial.print("encB: ");
-  Serial.println(REG_TC2_CV0,DEC);
-
+  Serial.println(REG_TC2_CV0, DEC);
+#endif
   for (int i = 0; i < N_AXIS; i++)
   {
     sys_real_position[i] = sys.position[i];

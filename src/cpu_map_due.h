@@ -69,19 +69,19 @@ DUE
   #define X_STEP  40      // 40	PC8	Digital Pin 40 
   #define X_ENABLE 26     // 26	PD1	Digital pin 26
   #define X_DIRECTION 24  // 24	PA15	Digital Pin 24
-  #define X_CS 48  // 24	PA15	Digital Pin 24
+  #define X_CS 20  // 24	PA15	Digital Pin 24
   #define X_LIMIT_PIN 23   // 24	PA15	Digital Pin 24
  
   #define Y_STEP  28      // 28	PD3	Digital Pin 28
   #define Y_ENABLE 32     // 32	PD10	Digital Pin 32
   #define Y_DIRECTION 30  // 30	PD9	Digital Pin 30
-  #define Y_CS 49// 24	PA15	Digital Pin 24
+  #define Y_CS 21// 24	PA15	Digital Pin 24
   #define Y_LIMIT_PIN  25 // 24	PA15	Digital Pin 24
 
   #define Z_ENABLE 38     //38	PC6	Digital Pin 38
   #define Z_STEP  34      // 34	PC2	Digital Pin 34
   #define Z_DIRECTION 36   //36	PC4	Digital Pin 36
-  #define Z_CS  50// 24	PA15	Digital Pin 24
+  #define Z_CS  22// 24	PA15	Digital Pin 24
   #define Z_LIMIT_PIN 64  // 24	PA15	Digital Pin 24
    
  

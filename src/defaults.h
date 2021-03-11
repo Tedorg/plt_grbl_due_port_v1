@@ -31,18 +31,18 @@
 #ifndef defaults_h
 #ifdef DEFAULTS_PLT_V2
 #include "MaslowDue.h"
- #define DEFAULT_X_STEPS_PER_MM 80.0
-  #define DEFAULT_Y_STEPS_PER_MM 80.0
-  #define DEFAULT_Z_STEPS_PER_MM 80.0
+ #define DEFAULT_X_STEPS_PER_MM 160.0
+  #define DEFAULT_Y_STEPS_PER_MM 160.0
+  #define DEFAULT_Z_STEPS_PER_MM 160.0
   #define DEFAULT_X_ENC_STEPS_PER_MM 100.0
   #define DEFAULT_Y_ENC_STEPS_PER_MM 100.0
   #define DEFAULT_Z_ENC_STEPS_PER_MM 50.0
-  #define DEFAULT_X_MAX_RATE 17500.0 // mm/min
-  #define DEFAULT_Y_MAX_RATE 17500.0 // mm/min
-  #define DEFAULT_Z_MAX_RATE 17500.0 // mm/min
-  #define DEFAULT_X_ACCELERATION (200.0*60*60) // 10*60*60 mm/min^2 = 10 mm/sec^2
-  #define DEFAULT_Y_ACCELERATION (200.0*60*60) // 10*60*60 mm/min^2 = 10 mm/sec^2
-  #define DEFAULT_Z_ACCELERATION (200.0*60*60) // 10*60*60 mm/min^2 = 10 mm/sec^2
+  #define DEFAULT_X_MAX_RATE 15500.0 // mm/min
+  #define DEFAULT_Y_MAX_RATE 15500.0 // mm/min
+  #define DEFAULT_Z_MAX_RATE 15500.0 // mm/min
+  #define DEFAULT_X_ACCELERATION (300.0*60*60) // 10*60*60 mm/min^2 = 10 mm/sec^2
+  #define DEFAULT_Y_ACCELERATION (300.0*60*60) // 10*60*60 mm/min^2 = 10 mm/sec^2
+  #define DEFAULT_Z_ACCELERATION (300.0*60*60) // 10*60*60 mm/min^2 = 10 mm/sec^2
   #define DEFAULT_X_MAX_TRAVEL 800.0 // mm NOTE: Must be a positive value.
   #define DEFAULT_Y_MAX_TRAVEL 1200.0 // mm NOTE: Must be a positive value.
   #define DEFAULT_Z_MAX_TRAVEL 50.0 // mm NOTE: Must be a positive value.
@@ -65,7 +65,7 @@
   #define DEFAULT_HOMING_ENABLE 0  // false
   #define DEFAULT_HOMING_DIR_MASK 0 // move positive dir
   #define DEFAULT_HOMING_FEED_RATE 100.0 // mm/min
-  #define DEFAULT_HOMING_SEEK_RATE 10500.0 // mm/min
+  #define DEFAULT_HOMING_SEEK_RATE 13500.0 // mm/min
   #define DEFAULT_HOMING_DEBOUNCE_DELAY 250 // msec (0-65k)
   #define DEFAULT_HOMING_PULLOFF 1.0 // mm
 

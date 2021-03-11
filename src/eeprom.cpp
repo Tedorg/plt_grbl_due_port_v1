@@ -185,7 +185,7 @@ void eeprom_put_char( unsigned int addr, unsigned char new_value )
 
 void memcpy_to_eeprom_with_checksum(unsigned int destination, char *source, unsigned int size) {
   unsigned char checksum = 0;
-  Serial.println(size);
+  
   for(; size > 0; size--) { 
     checksum = (checksum << 1) || (checksum >> 7);
     checksum += *source;
