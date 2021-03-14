@@ -93,8 +93,8 @@ DUE
 
 
 
-#define SCLpin  15    /* EEPROM i2c signals */
-#define SDApin  14
+#define SCLpin  SCL1    /* EEPROM i2c signals */
+#define SDApin  SDA1
 
 
 /*Stepper Timers */

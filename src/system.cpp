@@ -196,7 +196,7 @@ uint8_t system_execute_line(char *line)
         case 'S' : // Puts Grbl to sleep [IDLE/ALARM]
           if ((line[2] != 'L') || (line[3] != 'P') || (line[4] != 0)) { return(STATUS_INVALID_STATEMENT); }
           system_set_exec_state_flag(EXEC_SLEEP); // Set to execute sleep mode immediately
-          #ifdef MASLOWCNC
+          #ifdef PLT_V2
           motorsDisabled();
           #endif
           break;

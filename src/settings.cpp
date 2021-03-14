@@ -171,13 +171,7 @@ void write_global_settings()
 
 
 // Method to restore EEPROM-saved Grbl global settings back to defaults.
-#ifdef DEBUG2
-void settings_restore(uint8_t restore_flag) {
 
-    settings = defaults;
-    
-  }
-#else
 void settings_restore(uint8_t restore_flag) {
   if (restore_flag & SETTINGS_RESTORE_DEFAULTS) {
     settings = defaults;
@@ -193,21 +187,21 @@ void settings_restore(uint8_t restore_flag) {
 
   if (restore_flag & SETTINGS_RESTORE_STARTUP_LINES) {
     #if N_STARTUP_LINE > 0
-      // eeprom_put_char(EEPROM_ADDR_STARTUP_BLOCK, 0);
-      // eeprom_put_char(EEPROM_ADDR_STARTUP_BLOCK+1, 0); // Checksum
+      eeprom_put_char(EEPROM_ADDR_STARTUP_BLOCK, 0);
+      eeprom_put_char(EEPROM_ADDR_STARTUP_BLOCK+1, 0); // Checksum
     #endif
     #if N_STARTUP_LINE > 1
-      // eeprom_put_char(EEPROM_ADDR_STARTUP_BLOCK+(LINE_BUFFER_SIZE+1), 0);
-      // eeprom_put_char(EEPROM_ADDR_STARTUP_BLOCK+(LINE_BUFFER_SIZE+2), 0); // Checksum
+      eeprom_put_char(EEPROM_ADDR_STARTUP_BLOCK+(LINE_BUFFER_SIZE+1), 0);
+      eeprom_put_char(EEPROM_ADDR_STARTUP_BLOCK+(LINE_BUFFER_SIZE+2), 0); // Checksum
     #endif
   }
 
   if (restore_flag & SETTINGS_RESTORE_BUILD_INFO) {
-    // eeprom_put_char(EEPROM_ADDR_BUILD_INFO , 0);
-    // eeprom_put_char(EEPROM_ADDR_BUILD_INFO+1 , 0); // Checksum
+    eeprom_put_char(EEPROM_ADDR_BUILD_INFO , 0);
+    eeprom_put_char(EEPROM_ADDR_BUILD_INFO+1 , 0); // Checksum
   }
 }
-#endif
+
 
 
 
@@ -251,20 +245,19 @@ uint8_t settings_read_coord_data(uint8_t coord_select, float *coord_data)
   return(true);
 }
 
-
 // Reads Grbl global settings struct from EEPROM.
 uint8_t read_global_settings() {
   // Check version-byte of eeprom
-  // uint8_t version = eeprom_get_char(0);
-  // if (version == SETTINGS_VERSION) {
-  //   // Read settings-record and check checksum
-  //   if (!(memcpy_from_eeprom_with_checksum((char*)&settings, EEPROM_ADDR_GLOBAL, sizeof(settings_t)))) {
-  //     return(false);
-  //   }
-  // } else {
-  //   return(false);
-  // }
-  return(false);
+  uint8_t version = eeprom_get_char(0);
+  if (version == SETTINGS_VERSION) {
+    // Read settings-record and check checksum
+    if (!(memcpy_from_eeprom_with_checksum((char*)&settings, EEPROM_ADDR_GLOBAL, sizeof(settings_t)))) {
+      return(false);
+    }
+  } else {
+    return(false);
+  }
+  return(true);
 }
 
 
@@ -407,16 +400,14 @@ uint8_t settings_store_global_setting(uint8_t parameter, float value) {
 
 // Initialize the config subsystem
 void settings_init() {
-  #ifdef DEBUG2
-   settings_restore(SETTINGS_RESTORE_ALL); // Force restore all EEPROM data.
-    //report_grbl_settings();
-  #else
+  
    if(!read_global_settings()) {
+    
     report_status_message(STATUS_SETTING_READ_FAIL);
     settings_restore(SETTINGS_RESTORE_ALL); // Force restore all EEPROM data.
     report_grbl_settings();
   }
-  #endif
+ 
  
 }
 

@@ -11,7 +11,6 @@
     GNU General Public License for more details.
     You should have received a copy of the GNU General Public License
     along with the Maslow Control Software.  If not, see <http://www.gnu.org/licenses/>.
-
     Created by:  Larry D O'Cull 
  
     BitBanged I2C to allow the use of any available pins
@@ -158,42 +157,36 @@ unsigned char eeprom_get_char( unsigned int addr )
 
 void eeprom_put_char( unsigned int addr, unsigned char new_value )
 {
-  //sizeof(new_value);
-
-	
-    // int i;
+    int i;
     
-    // eeprom_set_addr(EEWR, addr);
+    eeprom_set_addr(EEWR, addr);
 
-    // digitalWrite(SCLpin, LOW);   // SDA drops followed by SDA to create a start state
-    // delayMicroseconds(I2C_DELAY);      
-    // pinMode(SDApin, OUTPUT);
-    // for(i=0; i<8; i++)
-    // {
-    //       delayMicroseconds(I2C_DELAY);  
-    //       digitalWrite(SDApin,((new_value >> (7-i)) & 1)); // shift out data
-    //       delayMicroseconds(I2C_DELAY);  
-    //       digitalWrite(SCLpin, HIGH);  // drop clk line   
-    //       delayMicroseconds(I2C_DELAY);          
-    //       digitalWrite(SCLpin, LOW);  // drop clk line   
-    // }
-    // eeprom_get_ack();   
-    // eeprom_stop();
+    digitalWrite(SCLpin, LOW);   // SDA drops followed by SDA to create a start state
+    delayMicroseconds(I2C_DELAY);      
+    pinMode(SDApin, OUTPUT);
+    for(i=0; i<8; i++)
+    {
+          delayMicroseconds(I2C_DELAY);  
+          digitalWrite(SDApin,((new_value >> (7-i)) & 1)); // shift out data
+          delayMicroseconds(I2C_DELAY);  
+          digitalWrite(SCLpin, HIGH);  // drop clk line   
+          delayMicroseconds(I2C_DELAY);          
+          digitalWrite(SCLpin, LOW);  // drop clk line   
+    }
+    eeprom_get_ack();   
+    eeprom_stop();
  
-    // delayMicroseconds(EEPROM_WRITE_TIME);  // write cycle time for eeprom is 5ms
+    delayMicroseconds(EEPROM_WRITE_TIME);  // write cycle time for eeprom is 5ms
 }
 
 void memcpy_to_eeprom_with_checksum(unsigned int destination, char *source, unsigned int size) {
   unsigned char checksum = 0;
-  
   for(; size > 0; size--) { 
     checksum = (checksum << 1) || (checksum >> 7);
     checksum += *source;
-    //eeprom_put_char(destination++, *(source++)); 
+    eeprom_put_char(destination++, *(source++)); 
   }
- const char *a = new char(checksum);
-printf("des: %lf", atof(a)); // 3735928559
-  //eeprom_put_char(destination, checksum);
+  eeprom_put_char(destination, checksum);
 }
 
 int memcpy_from_eeprom_with_checksum(char *destination, unsigned int source, unsigned int size) {
@@ -219,9 +212,6 @@ void store_current_machine_pos(void)
 
 void recall_current_machine_pos(void)
 {
-  #ifdef PLT_V2
-//some sd card logic
-  #else
    if(eeprom_get_char(EEPROM_ADDR_MACHINE_STATE) != 0xA5) // test tag and init if not tagged
    {
       for(int i=0; i<0x200; i++)
@@ -234,9 +224,7 @@ void recall_current_machine_pos(void)
    memcpy_from_eeprom_with_checksum((char *)gc_state.coord_system,EEPROM_ADDR_MACHINE_STATE+0x80,sizeof(gc_state.coord_system));
    memcpy_from_eeprom_with_checksum((char *)gc_state.coord_offset,EEPROM_ADDR_MACHINE_STATE+0x100,sizeof(gc_state.coord_offset));
    memcpy_from_eeprom_with_checksum((char *)&gc_state.tool_length_offset,EEPROM_ADDR_MACHINE_STATE+0x180,sizeof(gc_state.tool_length_offset));
-
-  #endif
-  //   DEBUG_COM_PORT.print("MPOS RECALLED\n");
+//   DEBUG_COM_PORT.print("MPOS RECALLED\n");
 }
 
 

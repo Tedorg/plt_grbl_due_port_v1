@@ -45,6 +45,8 @@ void gc_init()
 
   // Load default G54 coordinate system.
   if (!(settings_read_coord_data(gc_state.modal.coord_select,gc_state.coord_system))) {
+   
+   
     report_status_message(STATUS_SETTING_READ_FAIL);
   }
 }
