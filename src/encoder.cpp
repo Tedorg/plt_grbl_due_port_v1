@@ -3,6 +3,7 @@
 #include "DueTimer.h"
 void read_enc_position(void);
 int32_t sys_real_position[N_AXIS]; // Real-time machine (aka home) Encoder  Position
+int lastZAstate,lastZBstate;
 //Arduino due Quad Decoder init
 const int quadY_A = Encoder_XA; //TIOA0
 const int quadY_B = Encoder_XB; //TIOB0
@@ -18,6 +19,50 @@ const int quadZ_A = Encoder_ZA; //TIOA8
 const int quadZ_B = Encoder_ZB; //TIOB7
 const unsigned int mask_quadZ_A = digitalPinToBitMask(quadZ_A);
 const unsigned int mask_quadZ_B = digitalPinToBitMask(quadZ_B);
+void update_Encoder_ZA(void)
+{
+  volatile int encState  = 0;
+  delayMicroseconds(2);
+  encState = (digitalRead(Encoder_ZA) << 1) + digitalRead(Encoder_ZB);
+  if(lastZAstate == encState) return; // noise reject
+  switch(encState)
+  {
+    case 0:
+    case 3:
+      sys_real_position[Z_AXIS]++;
+      lastZAstate = encState;  
+      break;
+      
+    case 1:
+    case 2:
+      sys_real_position[Z_AXIS]--;
+      lastZAstate = encState;  
+      break;
+  } 
+}
+
+void update_Encoder_ZB(void)
+{
+  volatile int encState  = 0;
+  delayMicroseconds(2);
+  encState = (digitalRead(Encoder_ZA) << 1) + digitalRead(Encoder_ZB);
+  if(lastZBstate == encState) return; // noise reject
+  switch(encState)
+  {
+    case 0:
+    case 3:
+      sys_real_position[Z_AXIS]--;
+      lastZBstate = encState;  
+      break;
+      
+    case 1:
+    case 2:
+      sys_real_position[Z_AXIS]++;
+      lastZBstate = encState;  
+      break;
+  } 
+}
+
 
 void activateCNT_TC0() // X Axis
 {
@@ -86,8 +131,14 @@ void initEncoder(void)
 
   // activate clock for TC2
   activateCNT_TC2();
+
+
+
+  attachInterrupt(digitalPinToInterrupt(Encoder_ZA), update_Encoder_ZA, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(Encoder_ZB), update_Encoder_ZB, CHANGE);
   ST_SYNCH_TIMER.attachInterrupt(read_enc_position).setPeriod(1100).start();
 }
+
 
 void enc_sync_position()
 {
@@ -109,6 +160,7 @@ void read_enc_position(void)
 
   sys_real_position[X_AXIS] = REG_TC0_CV0; // Todo -1 quick fix just for now
   sys_real_position[Y_AXIS] = REG_TC2_CV0; // Value of Encoder 2
+  
   long dummy = REG_TC0_SR0;                // vital - reading this clears the interrupt flag
   //   //int pos_Z = REG_TC2_CV0;  // Value of Encoder 3
 }

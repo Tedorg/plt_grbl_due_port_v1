@@ -274,8 +274,8 @@ void stepper_init()
   pinMode(X_STEP, OUTPUT);
   pinMode(X_ENABLE, OUTPUT);
   pinMode(X_DIRECTION, OUTPUT);
-  //pinMode(Encoder_XA, INPUT_PULLUP);
-  // pinMode(Encoder_XB, INPUT_PULLUP);
+  pinMode(X_STEP, HIGH);
+  pinMode(X_DIRECTION, HIGH);
 
   pinMode(Y_STEP, OUTPUT);
   pinMode(Y_ENABLE, OUTPUT);
@@ -290,56 +290,56 @@ void stepper_init()
 #ifdef PLT_V2
   SPI.begin();
   //digitalWrite(X_CS, HIGH);
-  // driver_x.begin();
-  // driver_x.toff(3);
-  // driver_x.blank_time(24);
-  // driver_x.rms_current(400); // mA
-  // driver_x.microsteps(16);
-  // driver_x.en_pwm_mode(1);  
-  // driver_x.TCOOLTHRS(0xFFFFF); // 20bit max
-  // driver_x.THIGH(0);
-  // driver_x.semin(5);
-  // driver_x.semax(2);
-  // driver_x.sedn(0b01);
+  driver_x.begin();
+  driver_x.toff(3);
+  driver_x.blank_time(24);
+  driver_x.rms_current(400); // mA
+  driver_x.microsteps(16);
+  driver_x.en_pwm_mode(1);  
+  driver_x.TCOOLTHRS(0xFFFFF); // 20bit max
+  driver_x.THIGH(0);
+  driver_x.semin(5);
+  driver_x.semax(2);
+  driver_x.sedn(0b01);
 
-  // Serial.print("X DRV_STATUS: 0b");
-  //  Serial.println(driver_x.DRV_STATUS(), BIN);
+  Serial.print("X DRV_STATUS: 0b");
+   Serial.println(driver_x.DRV_STATUS(), BIN);
 
-  //digitalWrite(X_ENABLE, LOW); 	// Enable driver in hardware
+  digitalWrite(X_ENABLE, LOW); 	// Enable driver in hardware
 
   // SPI.end();
-  //driver_y.begin();                 //  SPI: Init CS pins and possible SW SPI pins
-  // UART: Init SW UART (if selected) with default 115200 baudrate
+  // driver_y.begin();                 //  SPI: Init CS pins and possible SW SPI pins
+  // //UART: Init SW UART (if selected) with default 115200 baudrate
   // //driver_y.toff(5);                 // Enables driver in software
   // driver_y.rms_current(600);        // Set motor RMS current
   // driver_y.microsteps(16);          // Set microsteps to 1/16th
 
-  // driver_y.stealthChop(1);       // Toggle stealthChop on TMC2130/2160/5130/5160
+  // //driver_y.stealthChop(1);       // Toggle stealthChop on TMC2130/2160/5130/5160
   // //driver.en_spreadCycle(false);   // Toggle spreadCycle on TMC2208/2209/2224
+  digitalWrite(Y_ENABLE, LOW);
+
+  // digitalWrite(Y_CS, LOW);
+
+  // digitalWrite(X_ENABLE, LOW);
   // digitalWrite(Y_ENABLE, LOW);
+  driver_y.begin();
+  driver_y.toff(3);
+  driver_y.blank_time(24);
+  driver_y.rms_current(800); // mA
+  driver_y.microsteps(16);
+  driver_y.en_pwm_mode(1); 
+  driver_y.TCOOLTHRS(0xFFFFF); // 20bit max
+  driver_y.THIGH(0);
+  driver_y.semin(5);
+  driver_y.semax(2);
+  driver_y.sedn(0b01);
 
-  // // digitalWrite(Y_CS, LOW);
+  Serial.print("Y DRV_STATUS: 0b");
+   Serial.println(driver_y.DRV_STATUS(), BIN);
 
-  // // digitalWrite(X_ENABLE, LOW);
-  // // digitalWrite(Y_ENABLE, LOW);
-  // driver_y.begin();
-  // driver_y.toff(3);
-  // driver_y.blank_time(24);
-  // driver_y.rms_current(800); // mA
-  // driver_y.microsteps(16);
-  // driver_y.en_pwm_mode(1); 
-  // driver_y.TCOOLTHRS(0xFFFFF); // 20bit max
-  // driver_y.THIGH(0);
-  // driver_y.semin(5);
-  // driver_y.semax(2);
-  // driver_y.sedn(0b01);
+  //	digitalWrite(Y_ENABLE, LOW); 	// Enable driver in hardware
 
-  // Serial.print("Y DRV_STATUS: 0b");
-  //  Serial.println(driver_y.DRV_STATUS(), BIN);
-
-  // //	digitalWrite(Y_ENABLE, LOW); 	// Enable driver in hardware
-
-  // SPI.end();
+  SPI.end();
 
   motorsEnabled();
   //Plt v2 uses a due and tmc2130 drivers

@@ -33,10 +33,10 @@
 #include "MaslowDue.h"
  #define DEFAULT_X_STEPS_PER_MM 160.0
   #define DEFAULT_Y_STEPS_PER_MM 160.0
-  #define DEFAULT_Z_STEPS_PER_MM 160.0
+  #define DEFAULT_Z_STEPS_PER_MM 200.0
   #define DEFAULT_X_ENC_STEPS_PER_MM 100.0
   #define DEFAULT_Y_ENC_STEPS_PER_MM 100.0
-  #define DEFAULT_Z_ENC_STEPS_PER_MM 50.0
+  #define DEFAULT_Z_ENC_STEPS_PER_MM 22
   #define DEFAULT_X_MAX_RATE 15500.0 // mm/min
   #define DEFAULT_Y_MAX_RATE 15500.0 // mm/min
   #define DEFAULT_Z_MAX_RATE 15500.0 // mm/min
