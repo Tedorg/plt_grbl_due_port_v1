@@ -38,8 +38,8 @@ bool vsense;
 using namespace TMC2130_n;
 // Select your stepper driver type
 //TMC2130Stepper driver(CS_PIN, R_SENSE);                           // Hardware SPI
-TMC2130Stepper driver_x = TMC2130Stepper(X_CS, R_SENSE); // Hardware SPI
-TMC2130Stepper driver_y = TMC2130Stepper(Y_CS, R_SENSE);
+//TMC2130Stepper driver_x = TMC2130Stepper(X_CS, R_SENSE); // Hardware SPI
+//TMC2130Stepper driver_y = TMC2130Stepper(Y_CS, R_SENSE);
 
 void ST_RESET_TIMER_handler(void); // used as the GRBL TMR0 replacement
 void ST_MAIN_TIMER_handler(void);  // used as the GRBL TMR1 replacement
@@ -243,31 +243,36 @@ void motorsDisabled(void)
 }
 void stepper_status()
 {
-  driver_x.begin();
-  DRV_STATUS_t drv_status{0};
-  drv_status.sr = driver_x.DRV_STATUS();
+  // One Step has been made but not reistreed in teh encoder
 
-  Serial.print("0 ");
-  Serial.print(drv_status.sg_result, DEC);
-  Serial.print(" ");
-  Serial.println(driver_x.cs2rms(drv_status.cs_actual), DEC);
-  Serial.print("X LOST_STEPS: 0b");
-  Serial.println(driver_x.LOST_STEPS(), DEC);
 
-  driver_y.begin();
-  drv_status.sr = driver_y.DRV_STATUS();
+  // One step has been reistered
+  
+  // driver_x.begin();
+  // DRV_STATUS_t drv_status{0};
+  // drv_status.sr = driver_x.DRV_STATUS();
 
-  Serial.print("0 ");
-  Serial.print(drv_status.sg_result, DEC);
-  Serial.print(" ");
-  Serial.println(driver_y.cs2rms(drv_status.cs_actual), DEC);
-  Serial.print("Y LOST_STEPS: 0b");
-  Serial.println(driver_y.LOST_STEPS(), DEC);
+  // Serial.print("0 ");
+  // Serial.print(drv_status.sg_result, DEC);
+  // Serial.print(" ");
+  // Serial.println(driver_x.cs2rms(drv_status.cs_actual), DEC);
+  // Serial.print("X LOST_STEPS: 0b");
+  // Serial.println(driver_x.LOST_STEPS(), DEC);
+
+  // driver_y.begin();
+  // drv_status.sr = driver_y.DRV_STATUS();
+
+  // Serial.print("0 ");
+  // Serial.print(drv_status.sg_result, DEC);
+  // Serial.print(" ");
+  // Serial.println(driver_y.cs2rms(drv_status.cs_actual), DEC);
+  // Serial.print("Y LOST_STEPS: 0b");
+  // Serial.println(driver_y.LOST_STEPS(), DEC);
 }
-uint16_t rms_current(uint8_t CS, float Rsense = 0.11)
-{
-  return (float)(CS + 1) / 32.0 * (vsense ? 0.180 : 0.325) / (Rsense + 0.02) / 1.41421 * 1000;
-}
+// uint16_t rms_current(uint8_t CS, float Rsense = 0.11)
+// {
+//   return (float)(CS + 1) / 32.0 * (vsense ? 0.180 : 0.325) / (Rsense + 0.02) / 1.41421 * 1000;
+// }
 void stepper_init()
 {
 
