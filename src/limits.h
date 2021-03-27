@@ -30,6 +30,7 @@ void limits_init();
 void limits_disable();
 
 // Returns limit state as a bit-wise uint8 variable.
+void state_Limit_pins(void);
 uint8_t limits_get_state();
 
 // Perform one portion of the homing cycle based on the input settings.

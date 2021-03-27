@@ -127,7 +127,7 @@ typedef struct {
   int32_t position[N_AXIS]; 
   uint8_t step_control;        // Governs the step segment generator depending on system state.
   uint8_t probe_succeeded;     // Tracks if last probing cycle was successful.
-  #ifdef PLT_V2
+  #ifndef PLT_V2
     uint8_t homing_axis_lock[N_AXIS];    // Locks axes when limits engage. Used as an axis motion mask in the stepper ISR.
   #else
     uint8_t homing_axis_lock;    // Locks axes when limits engage. Used as an axis motion mask in the stepper ISR.
