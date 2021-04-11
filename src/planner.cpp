@@ -309,16 +309,7 @@ void plan_update_velocity_profile_parameters()
    to execute the special system motion. */
 uint8_t plan_buffer_line(float *target, plan_line_data_t *pl_data)
 {
-#ifdef DEBUG2
-  Serial.println("buffering");
-  Serial.print("x:  ");
-  Serial.print(target[0]);
-  Serial.print("  y:  ");
-  Serial.print(target[1]); 
-  Serial.print("  z:  ");
-  Serial.println(target[2]); 
 
-  #endif
   // Prepare and initialize new block. Copy relevant pl_data for block execution.
   plan_block_t *block = &block_buffer[block_buffer_head];
   memset(block,0,sizeof(plan_block_t)); // Zero all block values.

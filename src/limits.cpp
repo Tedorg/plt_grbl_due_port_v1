@@ -59,8 +59,8 @@ void state_Limit_pins(void) // DEFAULT: Limit pin change interrupt process.
         system_set_exec_alarm(EXEC_ALARM_HARD_LIMIT); // Indicate hard limit critical event
       }
 #else
-      mc_reset();                                   // Initiate system kill.
-      system_set_exec_alarm(EXEC_ALARM_HARD_LIMIT); // Indicate hard limit critical event
+      //   mc_reset();                                   // Initiate system kill.
+      //   system_set_exec_alarm(EXEC_ALARM_HARD_LIMIT); // Indicate hard limit critical event
 #endif
     }
   }
@@ -113,7 +113,7 @@ uint8_t limits_get_state()
   {
     limit_state |= (1 << 2);
   }
-
+  //report_realtime_debug(0, limit_state);
   return (limit_state);
 }
 
@@ -275,22 +275,22 @@ void limits_go_home(uint8_t cycle_mask)
         {
           if (approach)
           {
-            target[idx] = -max_travel;
+            target[idx] = max_travel;
           }
           else
           {
-            target[idx] = max_travel;
+            target[idx] = -max_travel;
           }
         }
         else
         {
           if (approach)
           {
-            target[idx] = max_travel;
+            target[idx] = -max_travel;
           }
           else
           {
-            target[idx] = -max_travel;
+            target[idx] = max_travel;
           }
         }
         // Apply axislock to the step port pins active in this cycle.
@@ -430,9 +430,21 @@ void limits_go_home(uint8_t cycle_mask)
       sys.position[idx] = set_axis_position;
     }
   }
-  sys.step_control = STEP_CONTROL_NORMAL_OP; // Return step control to normal operation.
-}
+  initEncoder();
+                // Prep and fill segment buffer from newly planned block.
 
+  //system_execute_line("G1x0y0f100");
+  sys.step_control = STEP_CONTROL_NORMAL_OP; // Return step control to normal operation.
+  pl_data->feed_rate = homing_rate; // Set current homing rate.
+  target[X_AXIS] = 100;
+  target[Y_AXIS] = 100;
+  plan_buffer_line(target, pl_data); // Bypass mc_line(). Directly plan homing motion.
+  st_prep_buffer();
+  target[X_AXIS] = 0;
+  target[Y_AXIS] = 0;
+  plan_buffer_line(target, pl_data); // Bypass mc_line(). Directly plan homing motion.
+  st_prep_buffer();    
+}
 
 // Performs a soft limit check. Called from mc_line() only. Assumes the machine has been homed,
 // the workspace volume is in all negative space, and the system is in normal operation.

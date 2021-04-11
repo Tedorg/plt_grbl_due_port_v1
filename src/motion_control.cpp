@@ -27,7 +27,7 @@
       __typeof__(n) _n = (n); \
       if (_n < v) v = _n; \
     }while(0)
-#define MIN_STEP 0.002f
+#define MIN_STEP 0.02f
 #define MAX_STEP 0.1f
 #define SIGMA 0.1f
 #ifdef MASLOWCNC
@@ -257,8 +257,8 @@ float first[2] = {
     position[1] + offset_a[1]
   }, 
   second[2] = {
-    position[0] + offset_b[0],
-    position[1] + offset_b[1]
+    target[0] + offset_b[0],
+    target[1] + offset_b[1]
   },
   bez_target[2]={
     position[0],

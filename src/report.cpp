@@ -139,6 +139,7 @@ void report_status_message(uint8_t status_code)
       printPgmString(PSTR("error:"));
       print_uint8_base10(status_code);
       report_util_line_feed();
+
   }
 }
 
@@ -182,6 +183,7 @@ void report_feedback_message(uint8_t message_code)
       printPgmString(PSTR("Restoring spindle")); break;
     case MESSAGE_SLEEP_MODE:
       printPgmString(PSTR("Sleeping")); break;
+   
   }
   report_util_feedback_line_feed();
 }
@@ -669,9 +671,18 @@ void report_realtime_status()
 }
 
 
-#ifdef DEBUG
-  void report_realtime_debug()
+#ifdef DEBUG2
+  void report_realtime_debug(uint8_t message_code, uint8_t val)
   {
-
+    switch(message_code){
+      case 0:
+        Serial.print("Endstopstates: ");
+        Serial.println(val);
+        break;
+      default:
+        Serial.print("?: ");
+        Serial.println(val);
+        break;
+  }
   }
 #endif
