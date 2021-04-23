@@ -271,6 +271,7 @@ uint8_t gc_execute_line(char *line)
             break;
           #ifdef ENABLE_PARKING_OVERRIDE_CONTROL
             case 56:
+            Serial.write("m56 gcode.cpp");
               word_bit = MODAL_GROUP_M9;
               gc_block.modal.override = OVERRIDE_PARKING_MOTION;
               break;

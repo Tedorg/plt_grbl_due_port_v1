@@ -25,7 +25,7 @@
 
 // The number of linear motions that can be jdsaklöin the plan at any give time
 #ifndef BLOCK_BUFFER_SIZE
-  #define BLOCK_BUFFER_SIZE 100
+  #define BLOCK_BUFFER_SIZE 200
 #endif
 
 // Returned status message from planner.

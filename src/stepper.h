@@ -23,7 +23,7 @@
 #define stepper_h
 
 #ifndef SEGMENT_BUFFER_SIZE
-  #define SEGMENT_BUFFER_SIZE 10
+#define SEGMENT_BUFFER_SIZE 100
 #endif
 
 

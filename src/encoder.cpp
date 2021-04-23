@@ -131,7 +131,8 @@ void initEncoder(void)
 
   // activate clock for TC2
   activateCNT_TC2();
-
+  digitalWrite(Encoder_ZA,HIGH);
+  digitalWrite(Encoder_ZB,HIGH);
 
 
   attachInterrupt(digitalPinToInterrupt(Encoder_ZA), update_Encoder_ZA, CHANGE);
