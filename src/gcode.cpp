@@ -271,9 +271,9 @@ uint8_t gc_execute_line(char *line)
             break;
           #ifdef ENABLE_PARKING_OVERRIDE_CONTROL
             case 56:
-            Serial.write("m56 gcode.cpp");
               word_bit = MODAL_GROUP_M9;
               gc_block.modal.override = OVERRIDE_PARKING_MOTION;
+              //bit_true(sys_rt_exec_state, EXEC_SAFETY_DOOR);
               break;
           #endif
           default: FAIL(STATUS_GCODE_UNSUPPORTED_COMMAND); // [Unsupported M command]

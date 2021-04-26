@@ -335,7 +335,9 @@ void protocol_auto_cycle_start()
 void protocol_execute_realtime()
 {
   protocol_exec_rt_system();
-  if (sys.suspend) { protocol_exec_rt_suspend(); }
+  
+  if (sys.suspend) { Serial.print("susüend ");
+  Serial.println(sys.suspend);protocol_exec_rt_suspend(); }
 }
 
 
@@ -428,7 +430,7 @@ void protocol_exec_rt_system()
           if (!(sys.suspend & SUSPEND_JOG_CANCEL)) {
             // Check if the safety re-opened during a restore parking motion only. Ignore if
             // already retracting, parked or in sleep state.
-            if (sys.state == STATE_SAFETY_DOOR) {
+            if (sys.state == STATE_SAFETY_DOOR ) {
               if (sys.suspend & SUSPEND_INITIATE_RESTORE) { // Actively restoring
                 #ifdef PARKING_ENABLE
                   // Set hold and reset appropriate control flags to restart parking sequence.
@@ -640,6 +642,8 @@ static void protocol_exec_rt_suspend()
 {
   #ifdef PARKING_ENABLE
     // Declare and initialize parking local variables
+    //bit_false(sys_rt_exec_state, EXEC_SAFETY_DOOR);
+    
     float restore_target[N_AXIS];
     float parking_target[N_AXIS];
     float retract_waypoint = PARKING_PULLOUT_INCREMENT;
@@ -692,6 +696,7 @@ static void protocol_exec_rt_suspend()
 					
             // Get current position and store restore location and spindle retract waypoint.
             system_convert_array_steps_to_mpos(parking_target,sys.position);
+            Serial.println("parking");
             if (bit_isfalse(sys.suspend,SUSPEND_RESTART_RETRACT)) {
               memcpy(restore_target,parking_target,sizeof(parking_target));
               retract_waypoint += restore_target[PARKING_AXIS];
