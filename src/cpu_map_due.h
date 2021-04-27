@@ -117,6 +117,11 @@ DUE
   #define Encoder_YB 5
   #define Encoder_ZA 10 /* Z encoder phases A & B */
   #define Encoder_ZB 11
+
+
+  #define TOOL_CHANGE_PIN 12  //Use the Safety Door feature for tool retrieat
+  #define INK_STATE_PIN 78     //
+  #define INK_STATE_RESET_PIN 19     //
  
 #endif
 

@@ -25,7 +25,9 @@
 
 void coolant_init()
 {
-  #ifndef PLT_V2 
+  #ifdef PLT_V2 
+    pinMode(INK_STATE_PIN, INPUT);
+    #else
     COOLANT_FLOOD_DDR |= (1 << COOLANT_FLOOD_BIT); // Configure as output pin.
     COOLANT_MIST_DDR |= (1 << COOLANT_MIST_BIT); // Configure as output pin.
     coolant_stop();
@@ -36,9 +38,12 @@ void coolant_init()
 // Returns current coolant output state. Overrides may alter it from programmed state.
 uint8_t coolant_get_state()
 {
-  #ifndef PLT_V2 
+  #ifdef PLT_V2 
     uint8_t cl_state = COOLANT_STATE_DISABLE;
-    #ifdef INVERT_COOLANT_FLOOD_PIN
+
+    return(cl_state);
+  #else 
+      #ifdef INVERT_COOLANT_FLOOD_PIN
       if (bit_isfalse(COOLANT_FLOOD_PORT,(1 << COOLANT_FLOOD_BIT))) {
     #else
       if (bit_istrue(COOLANT_FLOOD_PORT,(1 << COOLANT_FLOOD_BIT))) {
@@ -51,10 +56,9 @@ uint8_t coolant_get_state()
       if (bit_istrue(COOLANT_MIST_PORT,(1 << COOLANT_MIST_BIT))) {
     #endif
       cl_state |= COOLANT_STATE_MIST;
+      return COOLANT_STATE_DISABLE;
     }
-    return(cl_state);
-  #else 
-    return COOLANT_STATE_DISABLE;
+    
   #endif
 
 }
@@ -118,7 +122,6 @@ void coolant_set_state(uint8_t mode)
 	#endif
   sys.report_ovr_counter = 0; // Set to report change immediately
 }
-
 
 // G-code parser entry-point for setting coolant state. Forces a planner buffer sync and bails 
 // if an abort or check-mode is active.

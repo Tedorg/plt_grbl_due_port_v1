@@ -270,10 +270,18 @@ int protocol_main_loop()
       } else {
         // Check if the safety door is open.
         sys.state = STATE_IDLE;
-        if (system_check_safety_door_ajar()) {
+        
+        #ifdef PLT_V2
+        if (system_check_safety_door_ajar()) {   //quick fix for if an M01 ocured also enale safety door for tool change
           bit_true(sys_rt_exec_state, EXEC_SAFETY_DOOR);
           protocol_execute_realtime(); // Enter safety door mode. Should return as IDLE state.
         }
+        #else
+        if (system_check_safety_door_ajar()) {   //quick fix for 
+          bit_true(sys_rt_exec_state, EXEC_SAFETY_DOOR);
+          protocol_execute_realtime(); // Enter safety door mode. Should return as IDLE state.
+        }
+        #endif
         // All systems go!
         system_execute_startup(line); // Execute startup script.
       }

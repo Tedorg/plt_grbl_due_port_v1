@@ -20,9 +20,12 @@
 
 #include "grbl.h"
 
+byte enable_paused_m01 = 0;
+
 void system_init()
 {
- pinMode(12, INPUT);
+  pinMode(TOOL_CHANGE_PIN, INPUT);
+  
   serial_init(); // Setup serial baud rate and interrupts for machine port
 
   settings_init(); // Load Grbl settings from EEPROM
@@ -38,9 +41,27 @@ uint8_t system_control_get_state()
 {
   uint8_t control_state = 0;
 #ifdef PLT_V2
- 
-if (digitalRead(12)==1)
+
+if (digitalRead(TOOL_CHANGE_PIN)==1)
     {
+      bit_true(sys_rt_exec_state, EXEC_SAFETY_DOOR);
+      
+      control_state |= CONTROL_PIN_INDEX_SAFETY_DOOR;
+     
+    }
+if (digitalRead(INK_STATE_RESET_PIN)==1)
+    {
+      sys_rt_exec_tool_state = 0;
+      if(bit_istrue(sys_rt_exec_state, EXEC_SAFETY_DOOR))bit_false(sys_rt_exec_state, EXEC_SAFETY_DOOR);
+      //system_clear_exec_state_flag(EXEC_TOOL_CHANGE_M0);
+       
+  
+     
+    }
+if (bit_istrue(sys_rt_exec_tool_state,EXEC_TOOL_CHANGE_M0))
+    {
+      Serial.print("is ture:  ");
+   
       bit_true(sys_rt_exec_state, EXEC_SAFETY_DOOR);
       control_state |= CONTROL_PIN_INDEX_SAFETY_DOOR;
      
@@ -108,10 +129,12 @@ ISR(CONTROL_INT_vect)
 uint8_t system_check_safety_door_ajar()
 {
 #ifdef PLT_V2
-Serial.println(system_control_get_state() & CONTROL_PIN_INDEX_SAFETY_DOOR);
+//Serial.println(system_control_get_state() & CONTROL_PIN_INDEX_SAFETY_DOOR);
   return (system_control_get_state() & CONTROL_PIN_INDEX_SAFETY_DOOR);
-#endif
+  #else
+
   return (system_control_get_state() & CONTROL_PIN_INDEX_SAFETY_DOOR);
+  #endif
 }
 
 // Executes user startup script, if stored.
@@ -552,6 +575,22 @@ void system_set_exec_state_flag(uint8_t mask)
   sys_rt_exec_state |= (mask);
 #endif
 }
+#ifdef PLT_V2
+void system_set_exec_tool_state_flag(uint8_t mask)
+{
+
+  sys_rt_exec_tool_state |= (mask);
+          Serial.println(sys_rt_exec_tool_state);
+
+  
+
+}
+
+void system_clear_exec_tool_state_flag(uint8_t mask)
+{
+  sys_rt_exec_tool_state &= ~(mask);
+}
+#endif
 
 void system_clear_exec_state_flag(uint8_t mask)
 {

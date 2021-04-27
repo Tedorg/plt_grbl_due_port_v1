@@ -40,6 +40,12 @@
 #define EXEC_MOTION_CANCEL  bit(6) // bitmask 01000000
 #define EXEC_SLEEP          bit(7) // bitmask 10000000
 
+#ifdef PLT_V2
+#define EXEC_TOOL_CHANGE_M0  bit(0) // bitmask 00000001
+#endif
+
+
+
 // Alarm executor codes. Valid values (1-255). Zero is reserved.
 #define EXEC_ALARM_HARD_LIMIT           1
 #define EXEC_ALARM_SOFT_LIMIT           2
@@ -161,6 +167,10 @@ extern volatile uint8_t status_ok;
   #define EXEC_DEBUG_REPORT  bit(0)
   extern volatile uint8_t sys_rt_exec_debug;
 #endif
+#ifdef PLT_V2
+
+  extern volatile uint8_t sys_rt_exec_tool_state;
+#endif
 
 // Initialize the serial protocol
 void system_init();
@@ -204,6 +214,10 @@ void system_convert_array_encoder_steps_to_mpos(float *position, int32_t *steps)
 uint8_t system_check_travel_limits(float *target);
 
 // Special handlers for setting and clearing Grbl's real-time execution flags.
+#ifdef PLT_V2
+void system_set_exec_tool_state_flag(uint8_t mask);
+#endif
+
 void system_set_exec_state_flag(uint8_t mask);
 void system_clear_exec_state_flag(uint8_t mask);
 void system_set_exec_alarm(uint8_t code);
