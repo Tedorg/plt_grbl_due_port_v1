@@ -44,6 +44,7 @@ uint8_t system_control_get_state()
 
 if (digitalRead(TOOL_CHANGE_PIN)==1)
     {
+      
       bit_true(sys_rt_exec_state, EXEC_SAFETY_DOOR);
       
       control_state |= CONTROL_PIN_INDEX_SAFETY_DOOR;
@@ -52,6 +53,7 @@ if (digitalRead(TOOL_CHANGE_PIN)==1)
 if (digitalRead(INK_STATE_RESET_PIN)==1)
     {
       sys_rt_exec_tool_state = 0;
+      system_clear_exec_tool_state_flag(EXEC_TOOL_CHANGE_M0);
       if(bit_istrue(sys_rt_exec_state, EXEC_SAFETY_DOOR))bit_false(sys_rt_exec_state, EXEC_SAFETY_DOOR);
       //system_clear_exec_state_flag(EXEC_TOOL_CHANGE_M0);
        
@@ -60,7 +62,7 @@ if (digitalRead(INK_STATE_RESET_PIN)==1)
     }
 if (bit_istrue(sys_rt_exec_tool_state,EXEC_TOOL_CHANGE_M0))
     {
-      Serial.print("is ture:  ");
+      
    
       bit_true(sys_rt_exec_state, EXEC_SAFETY_DOOR);
       control_state |= CONTROL_PIN_INDEX_SAFETY_DOOR;

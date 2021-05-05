@@ -342,6 +342,7 @@ void protocol_auto_cycle_start()
 // limit switches, or the main program.
 void protocol_execute_realtime()
 {
+  system_control_get_state();
   protocol_exec_rt_system();
   
   if (sys.suspend) { Serial.print("susüend ");

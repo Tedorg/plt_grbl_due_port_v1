@@ -216,6 +216,7 @@ uint8_t system_check_travel_limits(float *target);
 // Special handlers for setting and clearing Grbl's real-time execution flags.
 #ifdef PLT_V2
 void system_set_exec_tool_state_flag(uint8_t mask);
+void system_clear_exec_tool_state_flag(uint8_t mask);
 #endif
 
 void system_set_exec_state_flag(uint8_t mask);
