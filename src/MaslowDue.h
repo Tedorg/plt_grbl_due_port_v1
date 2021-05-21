@@ -37,7 +37,7 @@
 //#define TUNING_MODE 1
 
 // HARDWARE PIN MAPPING
-#define HeartBeatLED 13
+#define HeartBeatLED 17
 
 
 #endif

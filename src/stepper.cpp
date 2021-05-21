@@ -386,7 +386,8 @@ void st_wake_up()
 bool pin_state = false; // Keep enabled.
 void stepperTimeoutHandler(void)
 {
-  ST_RESET_TIMER.stop();
+  
+  //ST_RESET_TIMER.stop();
   if (bit_istrue(settings.flags, BITFLAG_INVERT_ST_ENABLE))
   {
     pin_state = !pin_state;
@@ -410,7 +411,7 @@ void st_go_idle()
     // Force stepper dwell to lock axes for a defined amount of time to ensure the axes come to a complete
     // stop and not drift from residual inertial forces at the end of the last movement.
 
-    ST_RESET_TIMER.attachInterrupt(stepperTimeoutHandler).start(settings.stepper_idle_lock_time * 1000);
+    //ST_RESET_TIMER.attachInterrupt(stepperTimeoutHandler).start(settings.stepper_idle_lock_time * 1000);
 
     pin_state = true; // Override. Disable steppers.
   }
@@ -856,8 +857,8 @@ ISR(TIMER0_COMPA_vect)
 #else
 void ST_RESET_TIMER_handler(void)
 {
-  // Reset step cycle..
-  ST_RESET_TIMER.stop();
+  
+  //ST_RESET_TIMER.stop();
 }
 #endif
 

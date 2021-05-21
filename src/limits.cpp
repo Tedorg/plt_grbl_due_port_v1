@@ -430,20 +430,14 @@ void limits_go_home(uint8_t cycle_mask)
       sys.position[idx] = set_axis_position;
     }
   }
-  initEncoder();
+  encoder_init();
                 // Prep and fill segment buffer from newly planned block.
 
   //system_execute_line("G1x0y0f100");
-  sys.step_control = STEP_CONTROL_NORMAL_OP; // Return step control to normal operation.
-  pl_data->feed_rate = homing_rate; // Set current homing rate.
-  target[X_AXIS] = 100;
-  target[Y_AXIS] = 100;
-  plan_buffer_line(target, pl_data); // Bypass mc_line(). Directly plan homing motion.
-  st_prep_buffer();
-  target[X_AXIS] = 0;
-  target[Y_AXIS] = 0;
-  plan_buffer_line(target, pl_data); // Bypass mc_line(). Directly plan homing motion.
-  st_prep_buffer();    
+ 
+  
+
+   sys.step_control = STEP_CONTROL_NORMAL_OP; // Return step control to normal operation.   
 }
 
 // Performs a soft limit check. Called from mc_line() only. Assumes the machine has been homed,

@@ -1,7 +1,6 @@
 
 #include "grbl.h"
 #include "DueTimer.h"
-void read_enc_position(void);
 int32_t sys_real_position[N_AXIS]; // Real-time machine (aka home) Encoder  Position
 int lastZAstate,lastZBstate;
 //Arduino due Quad Decoder init
@@ -98,7 +97,7 @@ void activateCNT_TC2() // Y Axis
   // REG_TC2_IDR1 = 0b01111111; // disable other interrupts TC2
   NVIC_EnableIRQ(TC2_IRQn); // enable TC2 interrupts
 }
-void initEncoder(void)
+void encoder_init(void)
 {
   // activate peripheral functions for quad pins Encoder-X
   REG_PIOB_PDR = mask_quadX_A;   // activate peripheral function (disables all PIO functionality)
@@ -137,13 +136,13 @@ void initEncoder(void)
 
   attachInterrupt(digitalPinToInterrupt(Encoder_ZA), update_Encoder_ZA, CHANGE);
   attachInterrupt(digitalPinToInterrupt(Encoder_ZB), update_Encoder_ZB, CHANGE);
-  ST_SYNCH_TIMER.attachInterrupt(read_enc_position).setPeriod(1100).start();
+  ST_SYNCH_TIMER.attachInterrupt(read_enc_position).setPeriod(100000).start();
 }
 
 
 void enc_sync_position()
 {
-  initEncoder();
+  encoder_init();
 #ifdef DEBUG2
   Serial.print("encA: ");
   Serial.println(REG_TC0_CV0, DEC);
@@ -158,7 +157,7 @@ void enc_sync_position()
 
 void read_enc_position(void)
 {
-
+  // INK_STATE_TIMER_handler();
   sys_real_position[X_AXIS] = REG_TC0_CV0; // Todo -1 quick fix just for now
   sys_real_position[Y_AXIS] = REG_TC2_CV0; // Value of Encoder 2
   

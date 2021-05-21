@@ -334,6 +334,7 @@ uint8_t gc_execute_line(char *line)
           break; // Program pause
         case 1:
           gc_block.modal.program_flow = PROGRAM_FLOW_OPTIONAL_STOP;
+          //Serial.println("optional stop");
           break; // Optional stop not supported. Ignore.
         default:
           gc_block.modal.program_flow = int_value; // Program end and reset
@@ -366,10 +367,11 @@ uint8_t gc_execute_line(char *line)
           gc_block.modal.coolant |= COOLANT_MIST_ENABLE;
           break;
         case 8:
-          gc_block.modal.coolant |= COOLANT_FLOOD_ENABLE;
+          gc_block.modal.coolant |= COOLANT_FLOOD_ENABLE; // PL
           break;
         case 9:
           gc_block.modal.coolant = COOLANT_DISABLE;
+
           break; // M9 disables both M7 and M8.
         }
         break;
@@ -1396,6 +1398,7 @@ uint8_t gc_execute_line(char *line)
   // [8. Coolant control ]:
   if (gc_state.modal.coolant != gc_block.modal.coolant)
   {
+    
     // NOTE: Coolant M-codes are modal. Only one command per line is allowed. But, multiple states
     // can exist at the same time, while coolant disable clears all states.
     coolant_sync(gc_block.modal.coolant);
@@ -1562,18 +1565,19 @@ uint8_t gc_execute_line(char *line)
   {
     if (gc_state.modal.program_flow == PROGRAM_FLOW_OPTIONAL_STOP)
     {
-      
+
       if (sys.state != STATE_CHECK_MODE)
-      { system_set_exec_tool_state_flag(EXEC_TOOL_CHANGE_M0); // Use feed hold for program pause.
-     system_control_get_state();
-     protocol_execute_realtime();                          // Execute suspend.}
-               // Execute suspend.
-    }}
+      {
+        system_set_exec_tool_state_flag(EXEC_TOOL_CHANGE_M0); // Use feed hold for program pause.
+        system_control_get_state();
+        protocol_execute_realtime(); // Execute suspend.}
+                                     // Execute suspend.
+      }
+    }
     protocol_buffer_synchronize(); // Sync and finish all remaining buffered motions before moving on.
     if (gc_state.modal.program_flow == PROGRAM_FLOW_PAUSED)
     {
-      
-     
+
       if (sys.state != STATE_CHECK_MODE)
       {
         system_set_exec_state_flag(EXEC_FEED_HOLD); // Use feed hold for program pause.
@@ -1593,7 +1597,10 @@ uint8_t gc_execute_line(char *line)
       // gc_state.modal.cutter_comp = CUTTER_COMP_DISABLE; // Not supported.
       gc_state.modal.coord_select = 0; // G54
       gc_state.modal.spindle = SPINDLE_DISABLE;
-      gc_state.modal.coolant = COOLANT_DISABLE;
+        #ifndef PLT_V2
+        gc_state.modal.coolant = COOLANT_DISABLE;
+        #endif
+      
 #ifdef ENABLE_PARKING_OVERRIDE_CONTROL
 #ifdef DEACTIVATE_PARKING_UPON_INIT
       gc_state.modal.override = OVERRIDE_DISABLED;
@@ -1617,7 +1624,9 @@ uint8_t gc_execute_line(char *line)
         }
         system_flag_wco_change(); // Set to refresh immediately just in case something altered.
         spindle_set_state(SPINDLE_DISABLE, 0.0);
-        coolant_set_state(COOLANT_DISABLE);
+#ifndef PLT_V2
+        coolant_set_state(COOLANT_DISABLE); // De-energize
+#endif
       }
       report_feedback_message(MESSAGE_PROGRAM_END);
     }

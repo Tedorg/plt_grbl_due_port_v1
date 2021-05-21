@@ -113,7 +113,7 @@ typedef struct {
   float junction_deviation;
   float arc_tolerance;
   float rpm_max;
-  float rpm_min;
+  float ink_threshold;
   uint8_t flags;  // Contains default boolean settings
 
   uint8_t homing_dir_mask;

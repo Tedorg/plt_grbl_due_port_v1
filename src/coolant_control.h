@@ -28,11 +28,20 @@
 #define COOLANT_STATE_FLOOD     PL_COND_FLAG_COOLANT_FLOOD
 #define COOLANT_STATE_MIST      PL_COND_FLAG_COOLANT_MIST
 
+#ifdef INK_STATE_CONTROL
+  #define INK_STATE_BUFFER_SIZE 100
+#endif
+
 
 // Initializes coolant control pins.
 void coolant_init();
-
+void coolant_set_threshold(void);
+void INK_STATE_TIMER_handler(void);
 // Returns current coolant output state. Overrides may alter it from programmed state.
+
+uint32_t ink_state_buffer_handler(void);
+void ink_state_buffer_init(void);
+
 uint8_t coolant_get_state();
 
 // Immediately disables coolant pins.

@@ -225,7 +225,7 @@ void report_grbl_settings() {
   report_util_uint8_setting(26,settings.homing_debounce_delay);
   report_util_float_setting(27,settings.homing_pulloff,N_DECIMAL_SETTINGVALUE);
   report_util_float_setting(30,settings.rpm_max,N_DECIMAL_RPMVALUE);
-  report_util_float_setting(31,settings.rpm_min,N_DECIMAL_RPMVALUE);
+  report_util_float_setting(31,settings.ink_threshold,N_DECIMAL_RPMVALUE);
   report_util_uint8_setting(32,bit_istrue(settings.flags,BITFLAG_LASER_MODE));
 
 
@@ -572,6 +572,12 @@ void report_realtime_status()
    
  
   #endif
+   #ifdef INK_STATE_CONTROL 
+    printPgmString(PSTR("|ink level:"));
+    print_uint32_base10(sys.ink_state);
+   
+ 
+  #endif
 
 
   
@@ -623,6 +629,10 @@ void report_realtime_status()
         if (bit_istrue(ctrl_pin_state,CONTROL_PIN_INDEX_RESET)) { serial_write('R'); }
         if (bit_istrue(ctrl_pin_state,CONTROL_PIN_INDEX_FEED_HOLD)) { serial_write('H'); }
         if (bit_istrue(ctrl_pin_state,CONTROL_PIN_INDEX_CYCLE_START)) { serial_write('S'); }
+        #ifdef PLT_V2
+          if (bit_istrue(ctrl_pin_state,CONTROL_PIN_INDEX_TOOL_CHANGE)) { serial_write('I'); }
+          if (bit_istrue(ctrl_pin_state,CONTROL_PIN_INDEX_COLLISION_ERROR)) { serial_write('C'); }
+        #endif
       }
     }
   #endif

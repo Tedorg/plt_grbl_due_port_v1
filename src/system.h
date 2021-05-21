@@ -42,6 +42,10 @@
 
 #ifdef PLT_V2
 #define EXEC_TOOL_CHANGE_M0  bit(0) // bitmask 00000001
+#define EXEC_TOOL_TIMER_ACTIVE  bit(1) // bitmask 00000010 
+#define EXEC_TOOL_CALIBRATE_MODE  bit(2) // bitmask 00000100 
+#define EXEC_TOOL_COLLISION_MODE  bit(3) // bitmask 00001000  //  avoid touching the paper 
+#define EXEC_TOOL_COLLISION_ERROR  bit(4) // bitmask 00010000  //  pen has unententionally touched paper
 #endif
 
 
@@ -115,6 +119,14 @@
 #define CONTROL_PIN_INDEX_RESET         bit(1)
 #define CONTROL_PIN_INDEX_FEED_HOLD     bit(2)
 #define CONTROL_PIN_INDEX_CYCLE_START   bit(3)
+#ifdef PLT_V2
+#define CONTROL_PIN_INDEX_TOOL_CHANGE   bit(4)
+#define CONTROL_PIN_INDEX_COLLISION_ERROR   bit(5)
+#endif
+
+
+
+
 
 // Define spindle stop override control states.
 #define SPINDLE_STOP_OVR_DISABLED       0  // Must be zero.
@@ -137,6 +149,9 @@ typedef struct {
     uint8_t homing_axis_lock[N_AXIS];    // Locks axes when limits engage. Used as an axis motion mask in the stepper ISR.
   #else
     uint8_t homing_axis_lock;    // Locks axes when limits engage. Used as an axis motion mask in the stepper ISR.
+  #endif
+  #ifdef INK_STATE_CONTROL
+    uint32_t ink_state;
   #endif
   uint8_t f_override;          // Feed rate override value in percent
   uint8_t r_override;          // Rapids override value in percent

@@ -110,7 +110,7 @@ settings_t settings;
     junction_deviation : DEFAULT_JUNCTION_DEVIATION,
     arc_tolerance : DEFAULT_ARC_TOLERANCE,
     rpm_max : DEFAULT_SPINDLE_RPM_MAX,
-    rpm_min : DEFAULT_SPINDLE_RPM_MIN,
+    ink_threshold : DEFAULT_INK_THRESHOLD,
     flags : (DEFAULT_REPORT_INCHES << BIT_REPORT_INCHES) | \
              (DEFAULT_LASER_MODE << BIT_LASER_MODE) | \
              (DEFAULT_INVERT_ST_ENABLE << BIT_INVERT_ST_ENABLE) | \
@@ -357,7 +357,7 @@ uint8_t settings_store_global_setting(uint8_t parameter, float value) {
       case 26: settings.homing_debounce_delay = int_value; break;
       case 27: settings.homing_pulloff = value; break;
       case 30: settings.rpm_max = value; spindle_init(); break; // Re-initialize spindle rpm calibration
-      case 31: settings.rpm_min = value; spindle_init(); break; // Re-initialize spindle rpm calibration
+      case 31: settings.ink_threshold = value;coolant_set_threshold(); break; // Re-initialize spindle rpm calibration
       case 32:
         if (int_value) { settings.flags |= BITFLAG_LASER_MODE; }
         else { settings.flags &= ~BITFLAG_LASER_MODE; }

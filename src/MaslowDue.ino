@@ -38,7 +38,7 @@
 #include <SD.h>
 
 int incomingByte = 0;
-int healthLEDcounter = 0;
+//int healthLEDcounter = 0;
 
 
 
@@ -254,6 +254,7 @@ void setup()
 
 void loop()
 {
+  // digitalWrite(HeartBeatLED, healthLEDcounter++ & 0x40);
 #ifndef TUNING_MODE
   // Arduinos love for this loop to run free -- so no blocking!
   if (protocol_main_loop() != 0) // in exeptions, holds, etc.. reinitialise!
@@ -261,4 +262,5 @@ void loop()
 #else
   tuningLoop();
 #endif
+ 
 }

@@ -64,7 +64,7 @@ DUE
 #define STEPPERS_DISABLE_BIT    7  // Due Pin = C.7 pin 39
 #define STEPPERS_DISABLE_MASK   (1<<STEPPERS_DISABLE_BIT)
 
-#ifdef CW_BOARD
+#ifdef PLT_V2
 
   #define X_STEP  40      // 40	PC8	Digital Pin 40 
   #define X_ENABLE 26     // 26	PD1	Digital pin 26
@@ -97,9 +97,14 @@ DUE
 #define SDApin  SDA1
 
 
+#ifdef INK_STATE_CONTROL
+ #define INK_STATE_TIMER Timer3
+ #define INK_STATE_PERIOD 50000 /* 500 hz */
+#endif
+
 /*Stepper Timers */
 #define ST_MAIN_TIMER Timer4
-#define ST_RESET_TIMER Timer3
+#define ST_RESET_TIMER Timer7
 #define ST_SYNCH_TIMER Timer5
 
 /*Serial Handler Timer*/
@@ -111,17 +116,18 @@ DUE
 #define Spindle_PERIOD 500 /* 500 hz */
 
 #ifdef CW_BOARD
-  #define Encoder_XA 13 /* X encoder phases A & B */
-  #define Encoder_XB 2
+  #define Encoder_XA 2 /* X encoder phases A & B */
+  #define Encoder_XB 13
   #define Encoder_YA 4 /* Y encoder phases A & B */
   #define Encoder_YB 5
-  #define Encoder_ZA 10 /* Z encoder phases A & B */
-  #define Encoder_ZB 11
+  #define Encoder_ZA 11 /* Z encoder phases A & B */
+  #define Encoder_ZB 10
 
 
   #define TOOL_CHANGE_PIN 12  //Use the Safety Door feature for tool retrieat
-  #define INK_STATE_PIN 78     //
+  #define INK_STATE_PIN 54 //
   #define INK_STATE_RESET_PIN 19     //
+  #define LOW_INK_INDICATIOR_LED 16
  
 #endif
 

@@ -25,13 +25,13 @@ byte enable_paused_m01 = 0;
 void system_init()
 {
   pinMode(TOOL_CHANGE_PIN, INPUT);
-  
+
   serial_init(); // Setup serial baud rate and interrupts for machine port
 
   settings_init(); // Load Grbl settings from EEPROM
 
   stepper_init(); // Configure stepper pins and interrupt timers
-  initEncoder();
+  encoder_init();
 }
 
 // Returns control pin state as a uint8 bitfield. Each bit indicates the input pin state, where
@@ -42,32 +42,38 @@ uint8_t system_control_get_state()
   uint8_t control_state = 0;
 #ifdef PLT_V2
 
-if (digitalRead(TOOL_CHANGE_PIN)==1)
-    {
-      
-      bit_true(sys_rt_exec_state, EXEC_SAFETY_DOOR);
-      
-      control_state |= CONTROL_PIN_INDEX_SAFETY_DOOR;
-     
-    }
-if (digitalRead(INK_STATE_RESET_PIN)==1)
-    {
-      sys_rt_exec_tool_state = 0;
+  // if (digitalRead(TOOL_CHANGE_PIN) == 1)
+  // {
+
+  //   bit_true(sys_rt_exec_state, EXEC_SAFETY_DOOR);
+
+  //   control_state |= CONTROL_PIN_INDEX_SAFETY_DOOR;
+  // }
+  if (digitalRead(INK_STATE_RESET_PIN) == 1)
+  {
+    if (bit_istrue(sys_rt_exec_tool_state, EXEC_TOOL_COLLISION_ERROR))
+      system_clear_exec_tool_state_flag(EXEC_TOOL_COLLISION_ERROR);
+    if (bit_istrue(sys_rt_exec_tool_state, EXEC_TOOL_CHANGE_M0))
       system_clear_exec_tool_state_flag(EXEC_TOOL_CHANGE_M0);
-      if(bit_istrue(sys_rt_exec_state, EXEC_SAFETY_DOOR))bit_false(sys_rt_exec_state, EXEC_SAFETY_DOOR);
-      //system_clear_exec_state_flag(EXEC_TOOL_CHANGE_M0);
-       
-  
-     
-    }
-if (bit_istrue(sys_rt_exec_tool_state,EXEC_TOOL_CHANGE_M0))
-    {
-      
+    if (bit_istrue(sys_rt_exec_state, EXEC_SAFETY_DOOR))
+      bit_false(sys_rt_exec_state, EXEC_SAFETY_DOOR);
    
-      bit_true(sys_rt_exec_state, EXEC_SAFETY_DOOR);
-      control_state |= CONTROL_PIN_INDEX_SAFETY_DOOR;
-     
-    }
+    //system_clear_exec_state_flag(EXEC_TOOL_CHANGE_M0);
+  }
+  if (bit_istrue(sys_rt_exec_tool_state, EXEC_TOOL_CHANGE_M0))
+  {
+    bit_true(sys_rt_exec_state,EXEC_SAFETY_DOOR);
+    //control_state |= CONTROL_PIN_INDEX_SAFETY_DOOR;
+    control_state |= CONTROL_PIN_INDEX_TOOL_CHANGE;
+  }
+
+  if (bit_istrue(sys_rt_exec_tool_state, EXEC_TOOL_COLLISION_ERROR))
+  {
+    bit_true(sys_rt_exec_state, EXEC_SAFETY_DOOR);
+
+   // control_state |= CONTROL_PIN_INDEX_SAFETY_DOOR;
+    control_state |= CONTROL_PIN_INDEX_COLLISION_ERROR;
+  };
 #else
   uint8_t pin = (CONTROL_PIN & CONTROL_MASK);
 #ifdef INVERT_CONTROL_PIN_MASK
@@ -131,12 +137,12 @@ ISR(CONTROL_INT_vect)
 uint8_t system_check_safety_door_ajar()
 {
 #ifdef PLT_V2
-//Serial.println(system_control_get_state() & CONTROL_PIN_INDEX_SAFETY_DOOR);
+  //Serial.println(system_control_get_state() & CONTROL_PIN_INDEX_SAFETY_DOOR);
   return (system_control_get_state() & CONTROL_PIN_INDEX_SAFETY_DOOR);
-  #else
+#else
 
   return (system_control_get_state() & CONTROL_PIN_INDEX_SAFETY_DOOR);
-  #endif
+#endif
 }
 
 // Executes user startup script, if stored.
@@ -582,10 +588,6 @@ void system_set_exec_tool_state_flag(uint8_t mask)
 {
 
   sys_rt_exec_tool_state |= (mask);
-          Serial.println(sys_rt_exec_tool_state);
-
-  
-
 }
 
 void system_clear_exec_tool_state_flag(uint8_t mask)

@@ -46,6 +46,7 @@ static void protocol_exec_rt_suspend();
   uint8_t char_counter = 0;
   uint8_t line_flags = 0;
   uint8_t fresh_boot = 0;
+  uint16_t safety_message_throttle = 0;
 
   /* 
     GRBL PRIMARY LOOP: This init is to support Setup and Loop structure of Arduino
@@ -77,7 +78,7 @@ static void protocol_exec_rt_suspend();
       serial_reset_read_buffer(); // Clear serial read buffer
       gc_init(); // Set g-code parser to default state
       spindle_init();
-      //coolant_init();
+     
       limits_init();
       //probe_init();
       //
@@ -100,6 +101,7 @@ static void protocol_exec_rt_suspend();
       report_init_message();
       init_SD();
       getFileList();
+      coolant_init();
 
       // Start Grbl main loop. Processes program inputs and executes them.
       // in Arduino return to Loop() which calls --> protocol_main_loop();
@@ -345,8 +347,8 @@ void protocol_execute_realtime()
   system_control_get_state();
   protocol_exec_rt_system();
   
-  if (sys.suspend) { Serial.print("susüend ");
-  Serial.println(sys.suspend);protocol_exec_rt_suspend(); }
+  if (sys.suspend) {
+  protocol_exec_rt_suspend(); }
 }
 
 
@@ -396,7 +398,6 @@ void protocol_exec_rt_system()
     // NOTE: Once hold is initiated, the system immediately enters a suspend state to block all
     // main program processes until either reset or resumed. This ensures a hold completes safely.
     if (rt_exec & (EXEC_MOTION_CANCEL | EXEC_FEED_HOLD | EXEC_SAFETY_DOOR | EXEC_SLEEP)) {
-
       // State check for allowable states for hold methods.
       if (!(sys.state & (STATE_ALARM | STATE_CHECK_MODE))) {
       
@@ -434,7 +435,7 @@ void protocol_exec_rt_system()
         // NOTE: Safety door differs from feed holds by stopping everything no matter state, disables powered
         // devices (spindle/coolant), and blocks resuming until switch is re-engaged.
         if (rt_exec & EXEC_SAFETY_DOOR) {
-          report_feedback_message(MESSAGE_SAFETY_DOOR_AJAR);
+          if((safety_message_throttle++ & 0xFFFF) == 0)report_feedback_message(MESSAGE_SAFETY_DOOR_AJAR);
           // If jogging, block safety door methods until jog cancel is complete. Just flag that it happened.
           if (!(sys.suspend & SUSPEND_JOG_CANCEL)) {
             // Check if the safety re-opened during a restore parking motion only. Ignore if
@@ -621,8 +622,11 @@ void protocol_exec_rt_system()
           if (coolant_state & COOLANT_FLOOD_ENABLE) { bit_false(coolant_state,COOLANT_FLOOD_ENABLE); }
           else { coolant_state |= COOLANT_FLOOD_ENABLE; }
         }
-        coolant_set_state(coolant_state); // Report counter set in coolant_set_state().
+       
+           coolant_set_state(coolant_state); // Report counter set in coolant_set_state().
         gc_state.modal.coolant = coolant_state;
+        
+     
       }
     }
   }
@@ -705,7 +709,7 @@ static void protocol_exec_rt_suspend()
 					
             // Get current position and store restore location and spindle retract waypoint.
             system_convert_array_steps_to_mpos(parking_target,sys.position);
-            Serial.println("parking");
+            
             if (bit_isfalse(sys.suspend,SUSPEND_RESTART_RETRACT)) {
               memcpy(restore_target,parking_target,sizeof(parking_target));
               retract_waypoint += restore_target[PARKING_AXIS];
@@ -739,11 +743,15 @@ static void protocol_exec_rt_suspend()
               pl_data->condition = (PL_COND_FLAG_SYSTEM_MOTION|PL_COND_FLAG_NO_FEED_OVERRIDE);
               pl_data->spindle_speed = 0.0;
               spindle_set_state(SPINDLE_DISABLE,0.0); // De-energize
+              #ifndef PLT_V2
+            
               coolant_set_state(COOLANT_DISABLE); // De-energize
-
+              #endif
               // Execute fast parking retract motion to parking target location.
               if (parking_target[PARKING_AXIS] < PARKING_TARGET) {
                 parking_target[PARKING_AXIS] = PARKING_TARGET;
+                parking_target[X_AXIS] = 0;
+                parking_target[Y_AXIS] = 0;
                 pl_data->feed_rate = PARKING_RATE;
                 mc_parking_motion(parking_target, pl_data);
               }
@@ -753,7 +761,10 @@ static void protocol_exec_rt_suspend()
               // Parking motion not possible. Just disable the spindle and coolant.
               // NOTE: Laser mode does not start a parking motion to ensure the laser stops immediately.
               spindle_set_state(SPINDLE_DISABLE,0.0); // De-energize
-              coolant_set_state(COOLANT_DISABLE);     // De-energize
+              #ifndef PLT_V2
+            
+              coolant_set_state(COOLANT_DISABLE); // De-energize
+              #endif
 
             }
 
@@ -769,7 +780,10 @@ static void protocol_exec_rt_suspend()
             report_feedback_message(MESSAGE_SLEEP_MODE);
             // Spindle and coolant should already be stopped, but do it again just to be sure.
             spindle_set_state(SPINDLE_DISABLE,0.0); // De-energize
-            coolant_set_state(COOLANT_DISABLE); // De-energize
+            #ifndef PLT_V2
+            
+              coolant_set_state(COOLANT_DISABLE); // De-energize
+              #endif
             st_go_idle(); // Disable steppers
             while (!(sys.abort)) { protocol_exec_rt_system(); } // Do nothing until reset.
             return; // Abort received. Return to re-initialize.
@@ -795,9 +809,14 @@ static void protocol_exec_rt_suspend()
               if ((settings.flags & (BITFLAG_HOMING_ENABLE|BITFLAG_LASER_MODE)) == BITFLAG_HOMING_ENABLE) {
               #endif
                 // Check to ensure the motion doesn't move below pull-out position.
+               
                 if (parking_target[PARKING_AXIS] <= PARKING_TARGET) {
-                  parking_target[PARKING_AXIS] = retract_waypoint;
+                   parking_target[X_AXIS] = restore_target[X_AXIS];
+                   parking_target[Y_AXIS] = restore_target[Y_AXIS];
+                 
                   pl_data->feed_rate = PARKING_RATE;
+                   mc_parking_motion(parking_target, pl_data);
+                  parking_target[PARKING_AXIS] = retract_waypoint;
                   mc_parking_motion(parking_target, pl_data);
                 }
               }
@@ -820,7 +839,11 @@ static void protocol_exec_rt_suspend()
               // Block if safety door re-opened during prior restore actions.
               if (bit_isfalse(sys.suspend,SUSPEND_RESTART_RETRACT)) {
                 // NOTE: Laser mode will honor this delay. An exhaust system is often controlled by this pin.
-                coolant_set_state((restore_condition & (PL_COND_FLAG_COOLANT_FLOOD | PL_COND_FLAG_COOLANT_MIST)));
+                #ifndef PLT_V2
+            coolant_set_state((restore_condition & (PL_COND_FLAG_COOLANT_FLOOD | PL_COND_FLAG_COOLANT_MIST)));
+              
+              #endif
+                
                 delay_sec(SAFETY_DOOR_COOLANT_DELAY, DELAY_MODE_SYS_SUSPEND);
               }
             }
